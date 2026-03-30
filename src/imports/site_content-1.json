@@ -1,0 +1,182 @@
+{
+    "site_structure": {
+        "routes": [
+            {
+                "path": "/",
+                "component": "Homepage",
+                "title": "Home"
+            },
+            {
+                "path": "/frontend-projects",
+                "component": "FrontendProjects",
+                "title": "Frontend Projects"
+            }
+        ]
+    },
+    "global_components": {
+        "Navbar": {
+            "brand": {
+                "text_primary": "ABHIROOP",
+                "text_secondary": "CHAUDHURI",
+                "action": "navigate_home"
+            },
+            "navigation_links": [
+                {
+                    "label": "Github",
+                    "url": "https://github.com/abhiroopchaudhuri",
+                    "target": "_blank"
+                },
+                {
+                    "label": "Behance",
+                    "url": "https://www.behance.net/abhiroopchaudhuri",
+                    "target": "_blank"
+                },
+                {
+                    "label": "LinkedIn",
+                    "url": "https://www.linkedin.com/in/abhiroopchaudhuri",
+                    "target": "_blank"
+                }
+            ],
+            "features": [
+                "search",
+                "back_button"
+            ]
+        },
+        "CustomCursor": {
+            "enabled": true
+        }
+    },
+    "pages": {
+        "Homepage": {
+            "sections": [
+                {
+                    "id": "hero",
+                    "content": {
+                        "title": "PORTFOLIO",
+                        "subtitle": "CREATIVE DEVELOPER & DESIGNER",
+                        "scroll_hint": "SCROLL TO EXPLORE"
+                    }
+                },
+                {
+                    "id": "portfolio_selection",
+                    "options": [
+                        {
+                            "title": "UX/UI",
+                            "background_image": "ux-block.webp",
+                            "hover_text": "VIEW PROJECTS",
+                            "action": {
+                                "type": "open_url",
+                                "url": "https://behance.net/abhiroopchaudhuri"
+                            }
+                        },
+                        {
+                            "title": "DEV",
+                            "background_image": "ai-block.webp",
+                            "hover_text": "VIEW PROJECTS",
+                            "action": {
+                                "type": "navigate",
+                                "path": "/frontend-projects"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": "banner",
+                    "content": {
+                        "text": "CRAFTING DIGITAL EXPERIENCES",
+                        "background_image": "bg.webp"
+                    }
+                },
+                {
+                    "id": "certifications",
+                    "title": "CERTIFICATIONS",
+                    "items": [
+                        {
+                            "title": "AI For Everyone",
+                            "link": "https://coursera.org/share/9cbf601beeac9fb2e831d4170f52ad28",
+                            "image": "ai_certification.webp"
+                        },
+                        {
+                            "title": "Google UX Design",
+                            "link": "https://coursera.org/share/bf77019fdf390d8c3f01c2bb8851b54c",
+                            "image": "ux_certification.webp"
+                        },
+                        {
+                            "title": "Product Management",
+                            "link": "https://coursera.org/share/0d5737a8389a205da01d8cc92028ad18",
+                            "image": "product_certification.webp"
+                        },
+                        {
+                            "title": "Meta Frontend Dev",
+                            "link": "https://coursera.org/share/4baf63692cc1ea833e1471dccda3f11e",
+                            "image": "frontend_certification.webp"
+                        }
+                    ]
+                },
+                {
+                    "id": "footer",
+                    "content": {
+                        "text": "© 2025 ABHIROOP CHAUDHURI. MADE WITH REACT, GSAP & LENIS."
+                    }
+                }
+            ]
+        },
+        "FrontendProjects": {
+            "header": {
+                "title": "SELECTED WORKS"
+            },
+            "projects": [
+                {
+                    "id": 1,
+                    "title": "Cleochat - AI Multiple Personality Chatbot",
+                    "description": "Features 🚀 <br/> -Multiple Personas: Interact with various personalities,\n            each with a unique avatar and description.<br/>-Smooth UI: Modern and\n            responsive design for an engaging chat experience.<br/>-Local Storage:\n            Your chat logs are saved and can be reloaded for each personality.\n            <br/>-Import/Export Chat Logs: Easily import and export chat histories as\n            JSON files.<br/>-Sidebar Navigation: Quickly switch between different\n            personalities.<br/>-Details Bar: View detailed information about the\n            selected personality.<br/>-Loading Indicator: Shows when the chatbot is\n            processing your input.",
+                    "links": {
+                        "github": "https://github.com/abhiroopchaudhuri/cleochat",
+                        "live": "https://cleochat-eta.vercel.app/"
+                    },
+                    "image": "cleochat.webp"
+                },
+                {
+                    "id": 2,
+                    "title": "Cineverse: Next-Gen Movie App",
+                    "description": "Features 🎥 <br/>-Dynamic Movie Sliders: Seamless browsing through popular, top-rated, and upcoming movies.<br/>-Auto-playing Hero Section: Engaging visual showcase of featured films.<br/>-Detailed Movie Pages: In-depth information, trailers, and cast details for each movie.<br/>-Responsive Design: Optimized for all devices, from mobile to desktop.<br/>-Real-time Data: Up-to-date movie information fetched from TMDb API.<br/><br/>",
+                    "links": {
+                        "github": "https://github.com/abhiroopchaudhuri/cineverse-movie-app",
+                        "live": "https://cineverse-movie-app.vercel.app/"
+                    },
+                    "image": "cineverse.webp"
+                },
+                {
+                    "id": 3,
+                    "title": "Voyager - AI Image and Prompt Gallery",
+                    "description": "Features 🌟<br/>\n-Responsive Masonry Layout: Enjoy a beautiful, Pinterest-style masonry layout that adapts perfectly to any \nscreen size.<br/>\n-Smooth Animations: Experience delightful animations powered by Framer Motion.<br/>\n-Effortless Search: Quickly find images with a powerful search bar that moves into the navbar as you scroll.<br/>\n-Lazy Loading: Images load as you scroll, ensuring a fast and efficient browsing experience.<br/>\n-Interactive Modal: Click on any image to view it in an elegant modal.<br/>",
+                    "links": {
+                        "github": "https://github.com/abhiroopchaudhuri/voyager",
+                        "live": "https://abhiroopchaudhuri.github.io/voyager/"
+                    },
+                    "image": "voyager.webp"
+                },
+                {
+                    "id": 4,
+                    "title": "Draggable Notes App",
+                    "description": "✨ Features<br/>\n\n- Create Notes: Add new notes to your board with a single click. Each note is assigned a unique ID and remembers its position for persistence.<br/>\n- Drag and Drop: Effortlessly move notes around the screen using intuitive drag-and-drop functionality. The app prevents notes from overlapping, ensuring a clean and organized workspace.<br/>\n- Edit Notes: Double-click on a note to activate edit mode, allowing you to modify its content directly. <br/>\n- Delete Notes: Easily remove notes that are no longer needed with a single click. <br/>\n- Local Storage Persistence: Your notes are automatically saved to your browser's local storage, so you can pick up where you left off, even after closing the application.",
+                    "links": {
+                        "github": "https://github.com/abhiroopchaudhuri/draggable-notes-app",
+                        "live": "https://abhiroopchaudhuri.github.io/draggable-notes-app/"
+                    },
+                    "image": "notes.webp"
+                },
+                {
+                    "id": 5,
+                    "title": "Holovista Metaverse Demo",
+                    "description": "Features 🛰️<br/>-Interactive Navigation: Seamlessly explore different sections of the website, including About, Explore, Insights, and more.<br/>\n\n-Immersive Hero Section: Engage with visually stunning animations and captivating visuals in the Hero section, introducing users to the concept of the metaverse.<br/>\n\n-Dynamic Content: Discover various metaverse worlds available for exploration, each accompanied by descriptive text and engaging visuals.<br/>\n\n-Feedback Integration: Feedback and reviews by the users can be displayed to increase sense of trust and authenticity.",
+                    "links": {
+                        "github": "https://github.com/abhiroopchaudhuri/holovista-metaverse-website",
+                        "live": "https://holovista.vercel.app/"
+                    },
+                    "image": "metaverse.webp"
+                }
+            ]
+        }
+    }
+}
