@@ -27,6 +27,12 @@ type CarouselProject = {
 
 const CAROUSEL_PROJECTS = carouselProjectsJson.projects as CarouselProject[];
 
+/** Bleeds to the same width as the project carousel inside the padded `max-w-7xl` column. */
+const CAROUSEL_SECTION_BLEED = cn(
+  'relative z-10 min-w-0 box-border w-[calc(100%+4rem)] max-w-none',
+  '-ml-8 -mr-8 md:-ml-16 md:-mr-12 md:w-[calc(100%+7rem)]',
+);
+
 /* ─── Static noise tile (SVG feTurbulence is very expensive on every paint) ─── */
 function createNoiseDataUrl(size = 128): string {
   const c = document.createElement('canvas');
@@ -1104,7 +1110,7 @@ const SmoothCarousel = React.memo(() => {
         </div>
       </div>
 
-      <div className="-ml-8 -mr-8 w-[calc(100%+4rem)] md:-ml-16 md:-mr-12 md:w-[calc(100%+7rem)]">
+      <div className={CAROUSEL_SECTION_BLEED}>
         <div
           ref={setCarouselViewportRef}
           className="cursor-default overflow-x-clip overflow-y-visible py-4 overscroll-x-contain [overflow-clip-margin:3rem] [touch-action:pan-x_pan-y]"
@@ -1355,39 +1361,159 @@ const FluidTagTitle = ({ text }: { text: string }) => {
   );
 };
 
-const AboutSection = React.memo(() => (
-  <div className="cv-auto w-full py-24 border-t border-white/10">
-    <div id="about" className="scroll-mt-8" />
-    <FluidTagTitle text="About Me // 02" />
+type AboutExperienceItem = {
+  range: string;
+  title: string;
+  company: string;
+  meta: string;
+  detail: string;
+  logoSrc: string;
+  logoAlt: string;
+};
 
-    {/* Row 1: Para left, Image right */}
-    <div className="group relative mb-20 overflow-hidden border border-white/5 bg-[#0a0a0a] rounded-sm">
-      {/* Extended Background Image */}
+const ABOUT_EXPERIENCE: AboutExperienceItem[] = [
+  {
+    range: 'Jul 2025 — Present',
+    title: 'Lead Product Designer',
+    company: 'Innovaccer',
+    meta: 'Full-time · Noida · On-site',
+    detail:
+      'Led the design system behind 20+ products—components in code, Figma plugins, and a new charting library. Drove WCAG 2.2 alignment and shipped MCP skills plus AI-assisted workflows for design and engineering.',
+    logoSrc: '/logos/innovaccer-placeholder.svg',
+    logoAlt: 'Innovaccer (logo placeholder)',
+  },
+  {
+    range: 'Jul 2022 — Jul 2025',
+    title: 'Product UX/UI Designer',
+    company: 'Total AI Systems Inc.',
+    meta: 'Full-time · United States · Remote',
+    detail:
+      'Owned UX for flagship products Kollx 360 and Kollx Pro (formerly TotalCollectR)—turning complex collections workflows into clear interfaces and a cohesive strategy for consumers and agents.',
+    logoSrc: '/logos/total-ai-placeholder.svg',
+    logoAlt: 'Total AI Systems Inc. (logo placeholder)',
+  },
+  {
+    range: 'Jan 2022 — Jun 2022',
+    title: 'UX Designer & Front-end Manager',
+    company: 'Innov7 Lab',
+    meta: 'Full-time · Bengaluru · Remote',
+    detail:
+      'Research and design for metaverse and Web3 work—DeFi, NFT marketplaces, tokenized real estate, marketing sites, and on-chain apps—while aligning cross-functional teams with Agile Scrum.',
+    logoSrc: '/logos/innov7-placeholder.svg',
+    logoAlt: 'Innov7 Lab (logo placeholder)',
+  },
+  {
+    range: 'Sep 2021 — Jan 2022',
+    title: 'UX Designer (contract)',
+    company: 'WeLinQ',
+    meta: 'Contract · United Kingdom · Remote',
+    detail:
+      'Research, design, and testing for Welinq—flows for therapist booking, timeline chat prompts, and an expert dashboard for a mental-health focused social product.',
+    logoSrc: '/logos/welinq-placeholder.svg',
+    logoAlt: 'WeLinQ (logo placeholder)',
+  },
+];
+
+const AboutSection = React.memo(() => (
+  <div className="w-full min-w-0 py-24 border-t border-white/10">
+    <div id="about" className="scroll-mt-8" />
+    <div className={CAROUSEL_SECTION_BLEED}>
+      <FluidTagTitle text="Experience // 02" />
+
       <div
-        className="about-panel-bg absolute inset-0 bg-cover bg-center image-scale-base"
-        style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1771931342240-2c277b33905f?q=80&w=1080)' }}
-      />
-      <div className="hover-demonic-overlay" />
-      {/* Gradient to subtly darken the left side for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent z-[1] pointer-events-none" />
-      
-      <div className="relative z-10 grid grid-cols-1 md:grid-cols-2">
-        {/* Glassmorphic Text Panel */}
-        <div className="p-8 md:p-12 lg:p-16 flex flex-col justify-center bg-white/[0.03] backdrop-blur-md border-r border-white/10 shadow-[20px_0_40px_rgba(0,0,0,0.5)] pointer-events-none">
-          <h4 className="font-mono text-[16px] tracking-widest text-[#F05D23] uppercase mb-6">Who I Am</h4>
-          <p className="text-[#e0e0e0] font-mono text-[16px] leading-[1.85] tracking-wide relative z-10 drop-shadow-sm">
-            I'm Abhiroop — a Lead Product Designer and AI Agentic Workflow Strategist with a passion for
-            crafting digital experiences that resonate. With over a decade in the design and technology space,
-            I've shipped 17+ products across 50+ clients worldwide, driving 200% revenue growth and impacting
-            5M+ users. My work sits at the intersection of human-centered design and cutting-edge technology.
-          </p>
-        </div>
-        {/* Right empty container to maintain grid height and reveal the image */}
-        <div className="min-h-[300px] md:min-h-[400px] relative pointer-events-none">
+        className={cn(
+          'mt-2 box-border w-full max-w-none overflow-visible rounded-2xl border border-white/[0.09]',
+          'bg-[rgb(14_14_14_/0.5)] shadow-[0_28px_80px_rgb(0_0_0_/0.45),inset_0_1px_0_0_rgb(255_255_255_/0.06)]',
+          'backdrop-blur-2xl backdrop-saturate-[1.2]',
+          'px-6 py-9 sm:px-9 sm:py-10 md:px-12 md:py-12',
+        )}
+      >
+        <motion.p
+          className="w-full min-w-0 max-w-none font-mono text-[16px] leading-[1.85] tracking-wide text-[#e4e4e4] [overflow-wrap:anywhere]"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+        >
+          I&apos;m Abhiroop — a Lead Product Designer and AI Agentic Workflow Strategist with a passion for crafting
+          digital experiences that resonate. With over a decade in the design and technology space, I&apos;ve shipped
+          17+ products across 50+ clients worldwide, driving 200% revenue growth and impacting 5M+ users. My work sits at
+          the intersection of human-centered design and cutting-edge technology.
+        </motion.p>
+
+      <div className="relative mt-10 border-t border-white/[0.06] pt-10 md:mt-12 md:pt-12">
+        <div className="flex gap-0 pl-3 md:pl-5">
+          <div className="relative w-10 shrink-0 md:w-12" aria-hidden>
+            <motion.div
+              className="pointer-events-none absolute left-1/2 top-3 bottom-3 w-px -translate-x-1/2 origin-top bg-gradient-to-b from-[#F05D23]/55 via-[#F05D23]/22 to-white/[0.06]"
+              initial={{ scaleY: 0 }}
+              whileInView={{ scaleY: 1 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 1.05, ease: [0.16, 1, 0.3, 1] }}
+            />
+          </div>
+          <ol className="relative m-0 min-w-0 flex-1 list-none space-y-12 md:space-y-14 p-0" aria-label="Work experience">
+          {ABOUT_EXPERIENCE.map((item, i) => (
+            <motion.li
+              key={`${item.company}-${item.range}`}
+              className="relative"
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{
+                duration: 0.55,
+                delay: 0.06 + i * 0.09,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+            >
+              <span
+                className="absolute left-0 top-4 size-3 -translate-x-[calc(1.25rem-0.375rem)] rounded-full border-2 border-[#F05D23] bg-[rgb(8_8_8_/0.95)] shadow-[0_0_16px_rgba(240,93,35,0.28)] md:-translate-x-[calc(1.5rem-0.4375rem)] md:top-[1.125rem] md:size-3.5"
+                aria-hidden
+              />
+              <div
+                className={cn(
+                  'flex flex-col gap-6 rounded-xl sm:flex-row sm:items-start sm:justify-between sm:gap-8',
+                  'border border-white/[0.05] bg-black/35 px-4 py-5 sm:px-5 sm:py-6',
+                  'shadow-[inset_0_1px_0_0_rgb(255_255_255_/0.04)]',
+                )}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[#F05D23]/85 md:text-[12px]">
+                    {item.range}
+                  </p>
+                  <h3 className="mb-1.5 font-mono text-[17px] tracking-wide text-[#f4f4f4] md:text-[18px]">
+                    {item.title}
+                  </h3>
+                  <p className="mb-0 font-mono text-[13px] tracking-wide text-[#c8c8c8] md:text-[14px]">
+                    {item.company}
+                    <span className="text-[#5c5c5c]"> · </span>
+                    <span className="text-[#9a9a9a]">{item.meta}</span>
+                  </p>
+                  <p className="mt-3 max-w-2xl font-mono text-[14px] leading-relaxed tracking-wide text-[#b8b8b8] md:text-[15px]">
+                    {item.detail}
+                  </p>
+                </div>
+                <div className="shrink-0 sm:pt-0.5">
+                  <div className="relative size-[72px] overflow-hidden rounded-xl border border-white/[0.12] bg-[rgb(10_10_10_/0.9)] shadow-[0_8px_32px_rgb(0_0_0_/0.4)]">
+                    <img
+                      src={item.logoSrc}
+                      alt={item.logoAlt}
+                      width={72}
+                      height={72}
+                      className="size-[72px] object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+                </div>
+              </div>
+            </motion.li>
+          ))}
+          </ol>
         </div>
       </div>
+      </div>
     </div>
-
   </div>
 ));
 
@@ -1725,7 +1851,7 @@ export default function App() {
         
         <motion.div className="flex flex-col gap-4" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.9, delay: 0.25, ease: [0.25, 0.1, 0.25, 1] }}>
           <NavLink href="#projects" isActive={activeSection === 'projects'} onClick={scrollToSection('projects')}>PROJECTS</NavLink>
-          <NavLink href="#about" isActive={activeSection === 'about'} onClick={scrollToSection('about')}>ABOUT ME</NavLink>
+          <NavLink href="#about" isActive={activeSection === 'about'} onClick={scrollToSection('about')}>EXPERIENCE</NavLink>
           <NavLink href="#work" isActive={activeSection === 'work'} onClick={scrollToSection('work')}>MY WORK</NavLink>
           <NavLink href="#certifications" isActive={activeSection === 'certifications'} onClick={scrollToSection('certifications')}>CERTIFICATIONS</NavLink>
         </motion.div>
@@ -1760,9 +1886,9 @@ export default function App() {
       {/* ── Main Content Area ── */}
       <section
         ref={scrollContainerRef}
-        className="relative z-10 flex h-full min-h-0 flex-1 overflow-y-auto overflow-x-clip pr-8 [overflow-clip-margin:2.5rem] md:pr-12 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="relative z-10 flex h-full min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-clip pr-8 [overflow-clip-margin:3rem] md:pr-12 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
-        <div className="max-w-7xl w-full mx-auto pb-24 pl-8 md:pl-16">
+        <div className="mx-auto w-full min-w-0 max-w-7xl pb-24 pl-8 md:pl-16">
           {/* ─ Hero Section ── */}
           <div id="home" className="min-h-screen flex flex-col justify-end relative pb-8">
 
