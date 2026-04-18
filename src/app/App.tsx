@@ -3,10 +3,29 @@ import { motion, useScroll, useTransform } from 'motion/react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import { ChevronLeft, ChevronRight, ExternalLink, Github, ArrowUpRight } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { cn } from './lib/utils';
 import ScrollFramePlayer from './components/ScrollFramePlayer';
+import carouselProjectsJson from '../imports/carousel_projects.json';
 
 const THEME_ORANGE = '#F05D23';
+
+type CarouselProjectLinks = {
+  github?: string;
+  live?: string;
+};
+
+type CarouselProject = {
+  id: number;
+  title: string;
+  details: string;
+  thumbnail: string;
+  cardUrl: string;
+  links?: CarouselProjectLinks;
+};
+
+const CAROUSEL_PROJECTS = carouselProjectsJson.projects as CarouselProject[];
 
 /* ─── Static noise tile (SVG feTurbulence is very expensive on every paint) ─── */
 function createNoiseDataUrl(size = 128): string {
@@ -39,7 +58,7 @@ const NoiseOverlay = React.memo(() => {
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-50 opacity-[0.25] mix-blend-soft-light"
+      className="pointer-events-none fixed inset-0 z-[4] opacity-[0.25] mix-blend-soft-light"
       style={{
         backgroundImage: `url(${dataUrl})`,
         backgroundRepeat: 'repeat',
@@ -800,40 +819,124 @@ const BackgroundChaseScene = React.memo(() => {
   );
 });
 
-const PROJECTS_DATA = [
-  {
-    id: 1,
-    title: "Cleochat - AI Multiple Personality Chatbot",
-    desc: "Interact with various personalities, each with a unique avatar and description. Smooth UI, local storage persistence, and JSON import/export for chat logs.",
-    links: { github: "https://github.com/abhiroopchaudhuri/cleochat", live: "https://cleochat-eta.vercel.app/" },
-    img: "https://images.unsplash.com/photo-1771503735122-22405ba958f9?q=80&w=1080"
-  },
-  {
-    id: 2,
-    title: "Cineverse: Next-Gen Movie App",
-    desc: "Dynamic movie sliders for popular, top-rated, and upcoming movies. Auto-playing hero section, detailed movie pages, and real-time data fetched from TMDb API.",
-    links: { github: "https://github.com/abhiroopchaudhuri/cineverse-movie-app", live: "https://cineverse-movie-app.vercel.app/" },
-    img: "https://images.unsplash.com/photo-1596641702675-800231d6a551?q=80&w=1080"
-  },
-  {
-    id: 3,
-    title: "Voyager - AI Image & Prompt Gallery",
-    desc: "Pinterest-style masonry layout, smooth Framer Motion animations, effortless scroll-linked search, lazy loading, and an elegant interactive modal.",
-    links: { github: "https://github.com/abhiroopchaudhuri/voyager", live: "https://abhiroopchaudhuri.github.io/voyager/" },
-    img: "https://images.unsplash.com/photo-1724786594289-41ebbf53a35b?q=80&w=1080"
-  },
-  {
-    id: 4,
-    title: "Holovista Metaverse Demo",
-    desc: "Immersive Hero section with captivating visuals introducing the metaverse. Dynamic content showcasing worlds available for exploration.",
-    links: { github: "https://github.com/abhiroopchaudhuri/holovista-metaverse-website", live: "https://holovista.vercel.app/" },
-    img: "https://images.unsplash.com/photo-1574988846886-a066407f9f78?q=80&w=1080"
-  }
-];
+const carouselTooltipContentClass = cn(
+  'z-[200] max-w-[min(22rem,calc(100vw-2rem))] rounded-sm border border-[#F05D23]/45',
+  'bg-[#080808]/98 px-4 py-3.5 text-left shadow-[0_0_32px_-8px_rgba(240,93,35,0.55),inset_0_1px_0_rgba(255,255,255,0.06)]',
+  'backdrop-blur-md outline-none',
+  'animate-in fade-in-0 zoom-in-95 duration-150'
+);
 
-const CAROUSEL_DRAG_CLICK_THRESHOLD_PX = 12;
+type CarouselTruncationTooltipProps = {
+  fullText: string;
+  lineClamp: 2 | 3;
+  maxHeightClass?: string;
+  side?: 'top' | 'bottom';
+  tooltipLabel: string;
+  /** Fired when truncated text is clicked (Radix trigger can block parent card click — handle navigation here). */
+  onTruncatedBodyActivate?: () => void;
+} & Omit<React.ComponentProps<'p'>, 'children'>;
+
+function CarouselTruncationTooltip({
+  fullText,
+  lineClamp,
+  maxHeightClass,
+  side = 'top',
+  tooltipLabel,
+  onTruncatedBodyActivate,
+  className,
+  style,
+  onClick: onClickProp,
+  onKeyDown: onKeyDownProp,
+  ...rest
+}: CarouselTruncationTooltipProps) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [truncated, setTruncated] = useState(false);
+
+  const measure = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    setTruncated(el.scrollHeight > el.clientHeight + 1);
+  }, []);
+
+  useLayoutEffect(() => {
+    measure();
+  }, [measure, fullText, lineClamp, maxHeightClass]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [measure, truncated]);
+
+  const clampClass = lineClamp === 2 ? 'line-clamp-2' : 'line-clamp-3';
+
+  const paragraph = (
+    <p
+      ref={ref}
+      className={cn(clampClass, maxHeightClass, className)}
+      style={style}
+      onClick={onClickProp}
+      onKeyDown={onKeyDownProp}
+      {...rest}
+    >
+      {fullText}
+    </p>
+  );
+
+  if (!truncated) {
+    return paragraph;
+  }
+
+  return (
+    <TooltipPrimitive.Root>
+      <TooltipPrimitive.Trigger asChild>
+        <p
+          ref={ref}
+          className={cn(clampClass, maxHeightClass, className, 'cursor-pointer')}
+          style={style}
+          {...rest}
+          onClick={(e) => {
+            onClickProp?.(e);
+            if (e.defaultPrevented) return;
+            onTruncatedBodyActivate?.();
+            e.stopPropagation();
+          }}
+          onKeyDown={(e) => {
+            onKeyDownProp?.(e);
+            if (e.defaultPrevented) return;
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            onTruncatedBodyActivate?.();
+            e.stopPropagation();
+          }}
+        >
+          {fullText}
+        </p>
+      </TooltipPrimitive.Trigger>
+      <TooltipPrimitive.Portal>
+        <TooltipPrimitive.Content
+          side={side}
+          sideOffset={10}
+          collisionPadding={12}
+          className={carouselTooltipContentClass}
+        >
+          <span className="mb-2 block font-mono text-[10px] tracking-[0.28em] text-[#F05D23]">{tooltipLabel}</span>
+          <p className="font-mono text-[14px] leading-relaxed tracking-wide text-[#d6d6d6]">{fullText}</p>
+          <TooltipPrimitive.Arrow className="fill-[#080808]" width={11} height={5} />
+        </TooltipPrimitive.Content>
+      </TooltipPrimitive.Portal>
+    </TooltipPrimitive.Root>
+  );
+}
+
+function isInternalCardHref(href: string): boolean {
+  if (!href || href === '#') return false;
+  return href.startsWith('/') && !href.startsWith('//');
+}
 
 const SmoothCarousel = React.memo(() => {
+  const navigate = useNavigate();
   const autoplayPlugin = useRef(
     Autoplay({ delay: 4000, stopOnInteraction: false, stopOnMouseEnter: true })
   );
@@ -842,16 +945,33 @@ const SmoothCarousel = React.memo(() => {
     {
       loop: true,
       align: 'start',
-      skipSnaps: false,
-      dragFree: false,
-      duration: 28,
-      dragThreshold: 8,
+      skipSnaps: true,
+      dragFree: true,
+      duration: 40,
+      dragThreshold: 4,
+      watchDrag: (_api, evt) => {
+        const e = evt as unknown as Event & { pointerType?: string };
+        if (typeof e.pointerType === 'string') {
+          return e.pointerType === 'touch';
+        }
+        return e.type.startsWith('touch');
+      },
     },
     [autoplayPlugin.current]
   );
 
+  const carouselViewportRef = useRef<HTMLDivElement | null>(null);
+  const wheelAccumRef = useRef(0);
+  const wheelRafRef = useRef<number | null>(null);
+  const setCarouselViewportRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      carouselViewportRef.current = node;
+      emblaRef(node);
+    },
+    [emblaRef]
+  );
+
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const cardPointerStart = useRef<{ x: number; y: number } | null>(null);
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
@@ -879,18 +999,60 @@ const SmoothCarousel = React.memo(() => {
     };
   }, [emblaApi, onSelect]);
 
-  const projectHref = (proj: (typeof PROJECTS_DATA)[0]) =>
-    proj.links.live ?? proj.links.github ?? '#';
+  useEffect(() => {
+    const el = carouselViewportRef.current;
+    if (!el || !emblaApi) return;
 
-  const onProjectLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    const start = cardPointerStart.current;
-    if (!start) return;
-    const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y) > CAROUSEL_DRAG_CLICK_THRESHOLD_PX;
-    if (moved) {
+    const flushWheel = () => {
+      wheelRafRef.current = null;
+      const api = emblaApi;
+      if (!api) return;
+      const total = wheelAccumRef.current;
+      wheelAccumRef.current = 0;
+      if (Math.abs(total) < 0.25) return;
+      const engine = api.internalEngine();
+      engine.scrollBody.useDuration(0);
+      engine.scrollTo.distance(-total, false);
+    };
+
+    const scheduleWheelFlush = () => {
+      if (wheelRafRef.current != null) return;
+      wheelRafRef.current = requestAnimationFrame(flushWheel);
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      let dx = e.deltaX;
+      let dy = e.deltaY;
+      if (e.shiftKey && Math.abs(dy) >= Math.abs(dx)) {
+        dx = dy;
+      }
+      if (Math.abs(dx) <= Math.abs(dy) || Math.abs(dx) < 0.5) return;
       e.preventDefault();
-    }
-    cardPointerStart.current = null;
-  };
+      wheelAccumRef.current += dx;
+      scheduleWheelFlush();
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      if (wheelRafRef.current != null) {
+        cancelAnimationFrame(wheelRafRef.current);
+        wheelRafRef.current = null;
+      }
+      wheelAccumRef.current = 0;
+    };
+  }, [emblaApi]);
+
+  const openCardProject = useCallback((proj: CarouselProject) => {
+    const u = proj.cardUrl?.trim();
+    const href = u || proj.links?.live?.trim() || proj.links?.github?.trim() || '#';
+    if (!href || href === '#') return;
+    if (isInternalCardHref(href)) navigate(href);
+    else window.open(href, '_blank', 'noopener,noreferrer');
+  }, [navigate]);
+
+  const isCarouselNavExcluded = (target: EventTarget | null) =>
+    target instanceof Element && target.closest('[data-carousel-exclude-nav="true"]') !== null;
 
   return (
     <motion.section
@@ -901,9 +1063,10 @@ const SmoothCarousel = React.memo(() => {
       aria-roledescription="carousel"
       aria-label="Featured projects"
     >
+      <TooltipPrimitive.Provider delayDuration={280} skipDelayDuration={120}>
       <div className="mb-4 flex items-center justify-end gap-4">
         <div className="flex flex-wrap items-center gap-2">
-          {PROJECTS_DATA.map((_, idx) => (
+          {CAROUSEL_PROJECTS.map((_, idx) => (
             <button
               key={idx}
               type="button"
@@ -917,7 +1080,7 @@ const SmoothCarousel = React.memo(() => {
             />
           ))}
           <span className="ml-2 font-mono text-[16px] tracking-widest text-white/90 select-none">
-            {String(selectedIndex + 1).padStart(2, '0')} / {String(PROJECTS_DATA.length).padStart(2, '0')}
+            {String(selectedIndex + 1).padStart(2, '0')} / {String(CAROUSEL_PROJECTS.length).padStart(2, '0')}
           </span>
         </div>
 
@@ -943,37 +1106,38 @@ const SmoothCarousel = React.memo(() => {
 
       <div className="-ml-8 -mr-8 w-[calc(100%+4rem)] md:-ml-16 md:-mr-12 md:w-[calc(100%+7rem)]">
         <div
-          ref={emblaRef}
-          className="cursor-grab overflow-x-clip overflow-y-visible py-4 [-webkit-overflow-scrolling:touch] active:cursor-grabbing overscroll-x-contain [overflow-clip-margin:3rem]"
+          ref={setCarouselViewportRef}
+          className="cursor-default overflow-x-clip overflow-y-visible py-4 overscroll-x-contain [overflow-clip-margin:3rem] [touch-action:pan-x_pan-y]"
           role="presentation"
         >
-          <div
-            className="ml-[-8px] flex items-stretch"
-            style={{ touchAction: 'pan-y pinch-zoom' }}
-          >
-            {PROJECTS_DATA.map((proj, idx) => (
-              <div
-                key={proj.id}
-                className="box-border flex min-h-0 min-w-0 shrink-0 grow-0 basis-[82%] pl-4 sm:basis-[52%] lg:basis-[38%]"
-              >
+          <div className="ml-[-8px] flex items-stretch [touch-action:pan-x_pan-y]">
+            {CAROUSEL_PROJECTS.map((proj, idx) => {
+              return (
                 <div
-                  className={cn(
-                    'carousel-project-card group relative flex w-full flex-col overflow-hidden rounded-sm border border-white/5 bg-[#0a0a0a]',
-                    'hover:z-10 hover:border-[#F05D23]/40 hover:shadow-[0_20px_50px_-12px_rgba(240,93,35,0.25)]',
-                    selectedIndex === idx && 'border-[#F05D23]/35 shadow-[0_12px_40px_-16px_rgba(240,93,35,0.2)]'
-                  )}
+                  key={proj.id}
+                  className="box-border flex min-h-0 min-w-0 shrink-0 grow-0 basis-[82%] pl-4 sm:basis-[52%] lg:basis-[38%]"
                 >
-                  <a
-                    href={projectHref(proj)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onPointerDown={(e) => {
-                      cardPointerStart.current = { x: e.clientX, y: e.clientY };
-                    }}
-                    onClick={onProjectLinkClick}
-                    className="absolute inset-0 z-[1] cursor-pointer rounded-sm"
+                  <div
+                    role="link"
+                    tabIndex={0}
                     aria-label={`Open project: ${proj.title}`}
-                  />
+                    className={cn(
+                      'carousel-project-card group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-sm border border-white/5 bg-[#0a0a0a]',
+                      'hover:z-10 hover:border-[#F05D23]/40 hover:shadow-[0_20px_50px_-12px_rgba(240,93,35,0.25)]',
+                      'outline-none focus-visible:ring-2 focus-visible:ring-[#F05D23]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]',
+                      selectedIndex === idx && 'border-[#F05D23]/35 shadow-[0_12px_40px_-16px_rgba(240,93,35,0.2)]'
+                    )}
+                    onClick={(e) => {
+                      if (isCarouselNavExcluded(e.target)) return;
+                      openCardProject(proj);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter' && e.key !== ' ') return;
+                      if (isCarouselNavExcluded(e.target)) return;
+                      e.preventDefault();
+                      openCardProject(proj);
+                    }}
+                  >
 
                   <div
                     className={cn(
@@ -983,24 +1147,31 @@ const SmoothCarousel = React.memo(() => {
                         : 'border-white/5 bg-black/40'
                     )}
                   >
-                    <p
-                      className={cn(
-                        'line-clamp-2 max-h-12 w-full font-mono text-[16px] leading-tight tracking-[0.18em] uppercase',
-                        selectedIndex === idx && 'holo-shimmer-active'
-                      )}
-                      style={{
-                        backgroundImage:
-                          selectedIndex === idx
-                            ? 'linear-gradient(90deg, #F05D23 0%, #ff9a5c 40%, #F05D23 60%, #ffffff 100%)'
-                            : 'linear-gradient(90deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.9) 100%)',
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundSize: '200% 100%',
-                      }}
-                    >
-                      {proj.title}
-                    </p>
+                    <div className="min-w-0 w-full pointer-events-auto">
+                      <CarouselTruncationTooltip
+                        key={`carousel-title-${proj.id}-${selectedIndex === idx}`}
+                        fullText={proj.title}
+                        lineClamp={2}
+                        maxHeightClass="max-h-12"
+                        side="bottom"
+                        tooltipLabel="Full title"
+                        onTruncatedBodyActivate={() => openCardProject(proj)}
+                        className={cn(
+                          'w-full font-mono text-[16px] leading-tight tracking-[0.18em] uppercase',
+                          selectedIndex === idx && 'holo-shimmer-active'
+                        )}
+                        style={{
+                          backgroundImage:
+                            selectedIndex === idx
+                              ? 'linear-gradient(90deg, #F05D23 0%, #ff9a5c 40%, #F05D23 60%, #ffffff 100%)'
+                              : 'linear-gradient(90deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.9) 100%)',
+                          backgroundClip: 'text',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundSize: '200% 100%',
+                        }}
+                      />
+                    </div>
                     {selectedIndex === idx && (
                       <div
                         className="perf-carousel-scan absolute bottom-0 left-0 right-0 h-px"
@@ -1012,16 +1183,15 @@ const SmoothCarousel = React.memo(() => {
                     )}
                   </div>
 
-                  <div className="relative z-[2] h-[min(200px,28vw)] shrink-0 overflow-hidden pointer-events-none sm:h-[min(220px,26vw)] md:h-[min(240px,24vw)]">
+                  <div className="relative z-[2] aspect-video w-full shrink-0 overflow-hidden pointer-events-none">
                     <img
-                      src={proj.img}
+                      src={proj.thumbnail}
                       alt=""
                       loading="lazy"
                       decoding="async"
                       draggable={false}
-                      className="carousel-project-card-thumb pointer-events-none absolute inset-0 h-full w-full select-none object-cover image-scale-base"
+                      className="carousel-project-card-thumb pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
                     />
-                    <div className="hover-demonic-overlay" />
                   </div>
 
                   <div className="relative z-[2] flex min-h-0 flex-col border-t border-white/10 bg-[#0a0a0a] px-5 pb-5 pt-4 md:px-6 md:pb-6 md:pt-5 pointer-events-none">
@@ -1030,12 +1200,13 @@ const SmoothCarousel = React.memo(() => {
                         className="select-none font-mono text-3xl text-white/20"
                         style={{ fontWeight: 700 }}
                       >
-                        0{idx + 1}
+                        {String(idx + 1).padStart(2, '0')}
                       </span>
                       <div className="relative z-[3] flex shrink-0 gap-2 opacity-80 transition-opacity pointer-events-auto sm:gap-3">
-                        {proj.links.live && (
+                        {proj.links?.live && (
                           <a
                             href={proj.links.live}
+                            data-carousel-exclude-nav="true"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/20 transition-colors hover:border-[#F05D23] hover:bg-[#F05D23] sm:h-10 sm:w-10"
@@ -1045,9 +1216,10 @@ const SmoothCarousel = React.memo(() => {
                             <ExternalLink className="h-4 w-4 text-white" />
                           </a>
                         )}
-                        {proj.links.github && (
+                        {proj.links?.github && (
                           <a
                             href={proj.links.github}
+                            data-carousel-exclude-nav="true"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/20 transition-colors hover:border-[#F05D23] hover:bg-[#F05D23] sm:h-10 sm:w-10"
@@ -1059,16 +1231,25 @@ const SmoothCarousel = React.memo(() => {
                         )}
                       </div>
                     </div>
-                    <p className="line-clamp-3 font-mono text-[16px] leading-relaxed text-[#999]">
-                      {proj.desc}
-                    </p>
+                    <div className="pointer-events-auto min-w-0">
+                      <CarouselTruncationTooltip
+                        fullText={proj.details}
+                        lineClamp={3}
+                        side="top"
+                        tooltipLabel="Full description"
+                        onTruncatedBodyActivate={() => openCardProject(proj)}
+                        className="font-mono text-[16px] leading-relaxed text-[#999]"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
+      </TooltipPrimitive.Provider>
     </motion.section>
   );
 });

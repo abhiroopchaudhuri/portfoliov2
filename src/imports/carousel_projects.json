@@ -1,0 +1,48 @@
+{
+  "projects": [
+    {
+      "id": 1,
+      "title": "MDS -Innovaccer's Design System",
+      "details": "MDS is the design system for Innovaccer. It is used to build 20+ products for the company which includes 2 platforms",
+      "thumbnail": "/thumbnails/mds-cover-main.jpg",
+      "cardUrl": "/projects/mds",
+      "links": {
+        "github": "https://github.com/innovaccer/design-system",
+        "live": "https://mds.innovaccer.com/?path=/docs/components-button-button-outlined-basic--basic"
+      }
+    },
+    {
+      "id": 2,
+      "title": "WCAG 2.2 & Section 508 Compliance for Innovaccer",
+      "details": "Achieved 100% Section 508 and WCAG 2.2 AA compliance for healthcare government projects which was mandatory, by centrally audting and updating MDS.",
+      "thumbnail": "/thumbnails/wcag-cover-main.jpg",
+      "cardUrl": "/projects/wcag",
+      "links": {
+        "github": "https://github.com/innovaccer/design-system",
+        "live": "https://mds.innovaccer.com/?path=/docs/components-select-multiselect-multiselect--multi-select"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Voyager - AI Image & Prompt Gallery",
+      "details": "Pinterest-style masonry layout, smooth Framer Motion animations, effortless scroll-linked search, lazy loading, and an elegant interactive modal.",
+      "thumbnail": "https://images.unsplash.com/photo-1724786594289-41ebbf53a35b?q=80&w=1080",
+      "cardUrl": "https://abhiroopchaudhuri.github.io/voyager/",
+      "links": {
+        "github": "https://github.com/abhiroopchaudhuri/voyager",
+        "live": "https://abhiroopchaudhuri.github.io/voyager/"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Holovista Metaverse Demo",
+      "details": "Immersive Hero section with captivating visuals introducing the metaverse. Dynamic content showcasing worlds available for exploration.",
+      "thumbnail": "https://images.unsplash.com/photo-1574988846886-a066407f9f78?q=80&w=1080",
+      "cardUrl": "https://holovista.vercel.app/",
+      "links": {
+        "github": "https://github.com/abhiroopchaudhuri/holovista-metaverse-website",
+        "live": "https://holovista.vercel.app/"
+      }
+    }
+  ]
+}
