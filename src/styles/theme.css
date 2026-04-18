@@ -551,31 +551,95 @@
 }
 
 /*
- * Card hover scales: keep base and hover on the same transform (translate3d + scale).
- * Pairing arbitrary [transform:translateZ(0)] with Tailwind hover:scale breaks interpolation.
+ * Carousel card: no whole-card scale; thumbnail scales on .carousel-card-shell:hover.
+ * Gradient stroke crossfades in (opacity) — base shell stays solid so hover never snaps.
  */
-.carousel-project-card {
-  transform: translate3d(0, 0, 0) scale(1);
-  transition:
-    transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+@keyframes carousel-border-breathe {
+  0%,
+  100% {
+    background-position: 12% 50%;
+  }
+  50% {
+    background-position: 88% 50%;
+  }
 }
 
-.carousel-project-card:hover {
-  transform: translate3d(0, 0, 0) scale(1.03);
+.carousel-card-shell {
+  position: relative;
+  isolation: isolate;
+  padding: 1px;
+  border-radius: 0.125rem;
+  background: rgb(240 93 35 / 0.38);
+  box-shadow: 0 12px 40px -16px rgba(240, 93, 35, 0.22);
+  transition: box-shadow 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.carousel-card-shell:hover {
+  box-shadow: 0 22px 56px -14px rgba(240, 93, 35, 0.3);
+}
+
+/* Masked ring: only the 1px stroke, sits under the inner card */
+.carousel-card-shell-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    90deg,
+    #f05d23 0%,
+    #ffc107 18%,
+    #ff9a5c 38%,
+    #ffeb3b 58%,
+    #fbbf24 72%,
+    #f05d23 100%
+  );
+  background-size: 320% 100%;
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  will-change: opacity;
+}
+
+.carousel-card-shell:hover .carousel-card-shell-glow {
+  opacity: 1;
+  animation: carousel-border-breathe 4.5s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  animation-delay: 0.12s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carousel-card-shell-glow {
+    transition: opacity 0.45s ease;
+  }
+
+  .carousel-card-shell:hover .carousel-card-shell-glow {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}
+
+.carousel-project-card {
+  transform: translate3d(0, 0, 0);
 }
 
 .carousel-project-card-thumb {
   scale: 1;
   opacity: 1;
   transition:
-    scale 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+    scale 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.carousel-project-card:hover .carousel-project-card-thumb {
-  scale: 1.05;
+.carousel-card-shell:hover .carousel-project-card-thumb {
+  scale: 1.025;
   opacity: 1;
 }
 

@@ -1117,54 +1117,44 @@ const SmoothCarousel = React.memo(() => {
                   key={proj.id}
                   className="box-border flex min-h-0 min-w-0 shrink-0 grow-0 basis-[82%] pl-4 sm:basis-[52%] lg:basis-[38%]"
                 >
-                  <div
-                    role="link"
-                    tabIndex={0}
-                    aria-label={`Open project: ${proj.title}`}
-                    className={cn(
-                      'carousel-project-card group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-sm border border-white/5 bg-[#0a0a0a]',
-                      'hover:z-10 hover:border-[#F05D23]/40 hover:shadow-[0_20px_50px_-12px_rgba(240,93,35,0.25)]',
-                      'outline-none focus-visible:ring-2 focus-visible:ring-[#F05D23]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]',
-                      selectedIndex === idx && 'border-[#F05D23]/35 shadow-[0_12px_40px_-16px_rgba(240,93,35,0.2)]'
-                    )}
-                    onClick={(e) => {
-                      if (isCarouselNavExcluded(e.target)) return;
-                      openCardProject(proj);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key !== 'Enter' && e.key !== ' ') return;
-                      if (isCarouselNavExcluded(e.target)) return;
-                      e.preventDefault();
-                      openCardProject(proj);
-                    }}
-                  >
+                  <div className="carousel-card-shell group relative flex min-h-0 w-full flex-1 hover:z-10">
+                    <div className="carousel-card-shell-glow" aria-hidden />
+                    <div
+                      role="link"
+                      tabIndex={0}
+                      aria-label={`Open project: ${proj.title}`}
+                      className={cn(
+                        'carousel-project-card relative z-[2] flex min-h-0 w-full cursor-pointer flex-col overflow-hidden rounded-sm bg-[#0a0a0a]',
+                        'outline-none focus-visible:ring-2 focus-visible:ring-[#F05D23]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]'
+                      )}
+                      onClick={(e) => {
+                        if (isCarouselNavExcluded(e.target)) return;
+                        openCardProject(proj);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key !== 'Enter' && e.key !== ' ') return;
+                        if (isCarouselNavExcluded(e.target)) return;
+                        e.preventDefault();
+                        openCardProject(proj);
+                      }}
+                    >
 
                   <div
-                    className={cn(
-                      'relative z-[2] flex h-20 shrink-0 items-center border-b px-5 select-none transition-colors duration-500 pointer-events-none md:px-6',
-                      selectedIndex === idx
-                        ? 'border-[#F05D23]/25 bg-black/60 backdrop-blur-sm'
-                        : 'border-white/5 bg-black/40'
-                    )}
+                    className="relative z-[2] flex h-20 shrink-0 items-center border-b border-[#F05D23]/25 bg-black/60 px-5 backdrop-blur-sm select-none transition-colors duration-500 pointer-events-none md:px-6"
                   >
                     <div className="min-w-0 w-full pointer-events-auto">
                       <CarouselTruncationTooltip
-                        key={`carousel-title-${proj.id}-${selectedIndex === idx}`}
+                        key={`carousel-title-${proj.id}`}
                         fullText={proj.title}
                         lineClamp={2}
                         maxHeightClass="max-h-12"
                         side="bottom"
                         tooltipLabel="Full title"
                         onTruncatedBodyActivate={() => openCardProject(proj)}
-                        className={cn(
-                          'w-full font-mono text-[16px] leading-tight tracking-[0.18em] uppercase',
-                          selectedIndex === idx && 'holo-shimmer-active'
-                        )}
+                        className="holo-shimmer-active w-full font-mono text-[16px] leading-tight tracking-[0.18em] uppercase"
                         style={{
                           backgroundImage:
-                            selectedIndex === idx
-                              ? 'linear-gradient(90deg, #F05D23 0%, #ff9a5c 40%, #F05D23 60%, #ffffff 100%)'
-                              : 'linear-gradient(90deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.9) 100%)',
+                            'linear-gradient(90deg, #F05D23 0%, #ff9a5c 40%, #F05D23 60%, #ffffff 100%)',
                           backgroundClip: 'text',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
@@ -1172,15 +1162,13 @@ const SmoothCarousel = React.memo(() => {
                         }}
                       />
                     </div>
-                    {selectedIndex === idx && (
-                      <div
-                        className="perf-carousel-scan absolute bottom-0 left-0 right-0 h-px"
-                        style={{
-                          background:
-                            'linear-gradient(90deg, transparent 0%, #F05D23 30%, #ff9a5c 50%, #F05D23 70%, transparent 100%)',
-                        }}
-                      />
-                    )}
+                    <div
+                      className="perf-carousel-scan absolute bottom-0 left-0 right-0 h-px"
+                      style={{
+                        background:
+                          'linear-gradient(90deg, transparent 0%, #F05D23 30%, #ff9a5c 50%, #F05D23 70%, transparent 100%)',
+                      }}
+                    />
                   </div>
 
                   <div className="relative z-[2] aspect-video w-full shrink-0 overflow-hidden pointer-events-none">
@@ -1194,7 +1182,7 @@ const SmoothCarousel = React.memo(() => {
                     />
                   </div>
 
-                  <div className="relative z-[2] flex min-h-0 flex-col border-t border-white/10 bg-[#0a0a0a] px-5 pb-5 pt-4 md:px-6 md:pb-6 md:pt-5 pointer-events-none">
+                  <div className="relative z-[2] flex min-h-0 flex-col border-t border-[#F05D23]/12 bg-[#0a0a0a] px-5 pb-5 pt-4 md:px-6 md:pb-6 md:pt-5 pointer-events-none">
                     <div className="mb-3 flex items-center justify-between gap-3 md:mb-4">
                       <span
                         className="select-none font-mono text-3xl text-white/20"
@@ -1242,8 +1230,9 @@ const SmoothCarousel = React.memo(() => {
                       />
                     </div>
                   </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
               );
             })}
           </div>
