@@ -1412,7 +1412,84 @@ const ABOUT_EXPERIENCE: AboutExperienceItem[] = [
     logoSrc: '/logos/welinq-placeholder.svg',
     logoAlt: 'WeLinQ (logo placeholder)',
   },
+  {
+    range: 'Feb 2021 — Sep 2021',
+    title: 'UX Designer',
+    company: 'Freelancing & Planned Startup',
+    meta: '',
+    detail: '',
+    logoSrc: '',
+    logoAlt: '',
+  },
 ];
+
+/** Parallel track (not a job): branches from Total AI card at a date-accurate height. */
+const ABOUT_AXION_BRANCH = {
+  range: 'Sep 2024 — Present',
+  name: 'AXION LAB',
+  /** Employment row index this branch is anchored to (Total AI = 1). */
+  insertAfterJobIndex: 1,
+  /** ISO dates for that employment span — used to place branch Y = (axionStart − jobStart) / (jobEnd − jobStart). */
+  anchorJobStart: '2022-07-01',
+  anchorJobEnd: '2025-07-01',
+  parallelStart: '2024-09-01',
+} as const;
+
+function parallelBranchTopPct(parallelStartIso: string, jobStartIso: string, jobEndIso: string): number {
+  const t0 = new Date(jobStartIso).getTime();
+  const t1 = new Date(jobEndIso).getTime();
+  const ta = new Date(parallelStartIso).getTime();
+  if (!(t1 > t0)) return 0;
+  const p = ((ta - t0) / (t1 - t0)) * 100;
+  return Math.min(100, Math.max(0, p));
+}
+
+const AXION_BRANCH_TOP_PCT = parallelBranchTopPct(
+  ABOUT_AXION_BRANCH.parallelStart,
+  ABOUT_AXION_BRANCH.anchorJobStart,
+  ABOUT_AXION_BRANCH.anchorJobEnd,
+);
+
+/** Horizontal segment from timeline node toward the card (trunk → experience box). */
+function ExperienceNodeConnector() {
+  return (
+    <div
+      className="pointer-events-none absolute left-0 top-[1.4375rem] z-0 -translate-x-full md:top-[1.625rem]"
+      aria-hidden
+    >
+      <div
+        className="w-5 md:w-7"
+        style={{
+          height: '2px',
+          background: 'linear-gradient(to right, transparent 0%, rgba(240,93,35,0.2) 30%, rgba(240,93,35,0.5))',
+          boxShadow: '0 0 8px rgba(240,93,35,0.12)',
+        }}
+      />
+    </div>
+  );
+}
+
+const AxionParallelCard = React.memo(function AxionParallelCard({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        'flex flex-col justify-center rounded-lg',
+        'border border-white/[0.08] border-l-[2px] border-l-[#F05D23]/60 bg-black/50 px-3 py-2.5',
+        'shadow-[inset_0_1px_0_0_rgb(255_255_255_/0.04)]',
+        className,
+      )}
+    >
+      <p className="mb-1 font-mono text-[9px] uppercase tracking-[0.2em] text-[#F05D23]/80 md:text-[10px]">
+        {ABOUT_AXION_BRANCH.range}
+      </p>
+      <p className="mb-0 font-mono text-[11px] uppercase tracking-[0.14em] leading-snug text-[#e0e0e0] md:text-[12px]">
+        {ABOUT_AXION_BRANCH.name}
+        <span className="text-[#666]"> — </span>
+        <span className="normal-case tracking-wide text-[#999]">Founded open-source non-profit &amp; non-commercial org</span>
+      </p>
+    </div>
+  );
+});
 
 const AboutSection = React.memo(() => (
   <div className="w-full min-w-0 py-24 border-t border-white/10">
@@ -1443,72 +1520,160 @@ const AboutSection = React.memo(() => (
 
       <div className="relative mt-10 border-t border-white/[0.06] pt-10 md:mt-12 md:pt-12">
         <div className="flex gap-0 pl-3 md:pl-5">
-          <div className="relative w-10 shrink-0 md:w-12" aria-hidden>
+          <div className="relative w-10 shrink-0 md:w-14" aria-hidden>
             <motion.div
-              className="pointer-events-none absolute left-1/2 top-3 bottom-3 w-px -translate-x-1/2 origin-top bg-gradient-to-b from-[#F05D23]/55 via-[#F05D23]/22 to-white/[0.06]"
+              className="pointer-events-none absolute left-1/2 top-3 bottom-3 -translate-x-1/2 origin-top"
+              style={{
+                width: '2px',
+                background: 'linear-gradient(to bottom, rgba(240,93,35,0.9), rgba(240,93,35,0.45) 50%, rgba(255,255,255,0.08))',
+                boxShadow: '0 0 14px rgba(240,93,35,0.2), 0 0 40px rgba(240,93,35,0.06)',
+              }}
               initial={{ scaleY: 0 }}
               whileInView={{ scaleY: 1 }}
               viewport={{ once: true, margin: '-80px' }}
-              transition={{ duration: 1.05, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
+            />
+            {/* Ambient glow haze behind trunk */}
+            <div
+              className="pointer-events-none absolute left-1/2 top-3 bottom-3 w-6 -translate-x-1/2 rounded-full opacity-[0.12] blur-xl"
+              style={{ background: 'linear-gradient(to bottom, #F05D23, transparent 85%)' }}
             />
           </div>
           <ol className="relative m-0 min-w-0 flex-1 list-none space-y-12 md:space-y-14 p-0" aria-label="Work experience">
-          {ABOUT_EXPERIENCE.map((item, i) => (
-            <motion.li
-              key={`${item.company}-${item.range}`}
-              className="relative"
-              initial={{ opacity: 0, y: 28 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{
-                duration: 0.55,
-                delay: 0.06 + i * 0.09,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-            >
-              <span
-                className="absolute left-0 top-4 size-3 -translate-x-[calc(1.25rem-0.375rem)] rounded-full border-2 border-[#F05D23] bg-[rgb(8_8_8_/0.95)] shadow-[0_0_16px_rgba(240,93,35,0.28)] md:-translate-x-[calc(1.5rem-0.4375rem)] md:top-[1.125rem] md:size-3.5"
-                aria-hidden
-              />
-              <div
-                className={cn(
-                  'flex flex-col gap-6 rounded-xl sm:flex-row sm:items-start sm:justify-between sm:gap-8',
-                  'border border-white/[0.05] bg-black/35 px-4 py-5 sm:px-5 sm:py-6',
-                  'shadow-[inset_0_1px_0_0_rgb(255_255_255_/0.04)]',
-                )}
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[#F05D23]/85 md:text-[12px]">
-                    {item.range}
-                  </p>
-                  <h3 className="mb-1.5 font-mono text-[17px] tracking-wide text-[#f4f4f4] md:text-[18px]">
-                    {item.title}
-                  </h3>
-                  <p className="mb-0 font-mono text-[13px] tracking-wide text-[#c8c8c8] md:text-[14px]">
-                    {item.company}
-                    <span className="text-[#5c5c5c]"> · </span>
-                    <span className="text-[#9a9a9a]">{item.meta}</span>
-                  </p>
-                  <p className="mt-3 max-w-2xl font-mono text-[14px] leading-relaxed tracking-wide text-[#b8b8b8] md:text-[15px]">
-                    {item.detail}
-                  </p>
-                </div>
-                <div className="shrink-0 sm:pt-0.5">
-                  <div className="relative size-[72px] overflow-hidden rounded-xl border border-white/[0.12] bg-[rgb(10_10_10_/0.9)] shadow-[0_8px_32px_rgb(0_0_0_/0.4)]">
-                    <img
-                      src={item.logoSrc}
-                      alt={item.logoAlt}
-                      width={72}
-                      height={72}
-                      className="size-[72px] object-cover"
-                      loading="lazy"
-                      decoding="async"
-                    />
+            {ABOUT_EXPERIENCE.map((item, i) => {
+              const motionProps = {
+                initial: { opacity: 0, y: 36, filter: 'blur(6px)' },
+                whileInView: { opacity: 1, y: 0, filter: 'blur(0px)' },
+                viewport: { once: true, margin: '-60px' } as const,
+                transition: {
+                  duration: 0.75,
+                  delay: 0.08 + i * 0.12,
+                  ease: [0.16, 1, 0.3, 1],
+                },
+              };
+
+              const employmentCard = (
+                <div
+                  className={cn(
+                    'exp-card relative z-[1] flex flex-col gap-6 rounded-xl sm:flex-row sm:items-start sm:justify-between sm:gap-8',
+                    'border border-white/[0.06] bg-[rgba(8,8,8,0.55)] px-5 py-5 sm:px-6 sm:py-6',
+                    'shadow-[inset_0_1px_0_0_rgb(255_255_255_/0.05)]',
+                    'transition-all duration-500 hover:border-[#F05D23]/20 hover:bg-[rgba(14,10,8,0.65)]',
+                    'hover:shadow-[inset_0_1px_0_0_rgb(255_255_255_/0.05),0_0_40px_rgba(240,93,35,0.04),0_8px_32px_rgba(0,0,0,0.3)]',
+                  )}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[#F05D23]/85 md:text-[12px]">
+                      {item.range}
+                    </p>
+                    <h3 className="mb-1.5 font-mono text-[17px] tracking-wide text-[#f4f4f4] md:text-[18px]">
+                      {item.title}
+                      <span className="text-[#5c5c5c]"> — </span>
+                      <span className="text-[#F05D23]">{item.company}</span>
+                    </h3>
+                    {item.meta && (
+                      <p className="mb-0 font-mono text-[13px] tracking-wide text-[#9a9a9a] md:text-[14px]">
+                        {item.meta}
+                      </p>
+                    )}
+                    {item.detail && (
+                      <p className="mt-3 max-w-none font-mono text-[14px] leading-relaxed tracking-wide text-[#b8b8b8] md:text-[15px]">
+                        {item.detail}
+                      </p>
+                    )}
                   </div>
+                  {item.logoSrc && (
+                    <div className="shrink-0 sm:pt-0.5">
+                      <div className="relative size-[72px] overflow-hidden rounded-xl border border-white/[0.12] bg-[rgb(10_10_10_/0.9)] shadow-[0_8px_32px_rgb(0_0_0_/0.4)]">
+                        <img
+                          src={item.logoSrc}
+                          alt={item.logoAlt}
+                          width={72}
+                          height={72}
+                          className="size-[72px] object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </motion.li>
-          ))}
+              );
+
+              if (i === ABOUT_AXION_BRANCH.insertAfterJobIndex) {
+                return (
+                  <motion.li
+                    key={`${item.company}-${item.range}-with-axion`}
+                    className="relative overflow-visible"
+                    {...motionProps}
+                    aria-label={`${item.company} employment with parallel AXION LAB branch`}
+                  >
+                    <span
+                      className="exp-node absolute left-0 top-4 z-[2] size-3.5 -translate-x-[calc(1.25rem+0.4375rem)] rounded-full border-2 border-[#F05D23] bg-[rgb(8_8_8)] md:-translate-x-[calc(1.75rem+0.5rem)] md:top-[1.125rem] md:size-4"
+                      aria-hidden
+                    />
+                    <ExperienceNodeConnector />
+                    <div
+                      className="relative z-[1] min-w-0"
+                      style={
+                        {
+                          ['--axion-branch-top' as string]: `${AXION_BRANCH_TOP_PCT}%`,
+                        } as React.CSSProperties
+                      }
+                    >
+                      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_min(17.5rem,34vw)] lg:items-stretch lg:gap-5 xl:grid-cols-[minmax(0,1fr)_min(19rem,32vw)]">
+                        <div className="min-w-0">{employmentCard}</div>
+                        <div className="relative mt-0 min-h-0 w-full lg:mt-0 lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:self-stretch">
+                          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#666] lg:hidden">
+                            Branch · parallel to role above
+                          </p>
+                          <div className="lg:hidden">
+                            <AxionParallelCard />
+                          </div>
+                          <div className="relative hidden min-h-0 flex-1 overflow-visible lg:block">
+                            {/* Branch connector line */}
+                            <div
+                              className="pointer-events-none absolute left-0 z-[3] -translate-x-full -translate-y-1/2"
+                              style={{ top: 'calc(100% - var(--axion-branch-top))' }}
+                              aria-hidden
+                            >
+                              <div
+                                className="w-7 md:w-8"
+                                style={{
+                                  height: '2px',
+                                  background: 'linear-gradient(to right, rgba(240,93,35,0.2), rgba(240,93,35,0.55))',
+                                  boxShadow: '0 0 10px rgba(240,93,35,0.15)',
+                                }}
+                              />
+                            </div>
+                            {/* Axion card */}
+                            <div
+                              className="relative z-[2] w-full lg:absolute lg:top-0 lg:left-0 lg:right-0 lg:pl-1"
+                              style={{ height: 'calc(100% - var(--axion-branch-top))' }}
+                              role="group"
+                              aria-label="AXION LAB parallel track"
+                            >
+                              <AxionParallelCard className="h-full ring-1 ring-[#F05D23]/10" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.li>
+                );
+              }
+
+              return (
+                <motion.li key={`${item.company}-${item.range}`} className="relative" {...motionProps}>
+                  <span
+                    className="exp-node absolute left-0 top-4 z-[2] size-3.5 -translate-x-[calc(1.25rem+0.4375rem)] rounded-full border-2 border-[#F05D23] bg-[rgb(8_8_8)] md:-translate-x-[calc(1.75rem+0.5rem)] md:top-[1.125rem] md:size-4"
+                    aria-hidden
+                  />
+                  <ExperienceNodeConnector />
+                  {employmentCard}
+                </motion.li>
+              );
+            })}
           </ol>
         </div>
       </div>
@@ -1710,6 +1875,37 @@ const ImageHoverStyles = () => (
     
     .group:hover .image-scale-base {
       animation: demon-glitch-anim 4s infinite steps(1);
+    }
+
+    /* ── Timeline premium effects ── */
+    @keyframes exp-node-pulse {
+      0% { box-shadow: 0 0 10px rgba(240,93,35,0.35), 0 0 20px rgba(240,93,35,0.12), 0 0 0 0 rgba(240,93,35,0.25); }
+      70% { box-shadow: 0 0 10px rgba(240,93,35,0.35), 0 0 20px rgba(240,93,35,0.12), 0 0 0 12px rgba(240,93,35,0); }
+      100% { box-shadow: 0 0 10px rgba(240,93,35,0.35), 0 0 20px rgba(240,93,35,0.12), 0 0 0 0 rgba(240,93,35,0); }
+    }
+
+    .exp-node {
+      box-shadow: 0 0 10px rgba(240,93,35,0.35), 0 0 20px rgba(240,93,35,0.12);
+      animation: exp-node-pulse 3s ease-out infinite;
+    }
+
+    .exp-card {
+      position: relative;
+    }
+
+    .exp-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      opacity: 0;
+      transition: opacity 0.5s;
+      background: linear-gradient(135deg, rgba(240,93,35,0.04) 0%, transparent 50%, rgba(240,93,35,0.02) 100%);
+      pointer-events: none;
+    }
+
+    .exp-card:hover::before {
+      opacity: 1;
     }
   `}</style>
 );
