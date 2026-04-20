@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk '$3 ~ /^core\\\\/src\\\\/components/ {n=split\\($3,a,\"/\"\\); folder=a[4]; changes[folder]+=$1+$2} END {for \\(f in changes\\) print changes[f], f}' /tmp/mds_numstat.txt)",
+      "Bash(awk '$3 ~ /core\\\\/src\\\\/components/ {n=split\\($3,a,\"/\"\\); folder=a[4]; changes[folder]+=$1+$2} END {for \\(f in changes\\) print changes[f], f}' /tmp/mds_numstat.txt)",
+      "Bash(/usr/bin/awk '$3 ~ /core\\\\/src\\\\/components/ {n=split\\($3,a,\"/\"\\); folder=a[4]; changes[folder]+=$1+$2} END {for \\(f in changes\\) print changes[f], f}' /tmp/mds_numstat.txt)",
+      "Bash(/usr/bin/awk 'BEGIN{print \"works\"}')",
+      "Bash(/usr/bin/awk '{print NR, NF, $3}' /tmp/mds_numstat.txt)",
+      "Bash(/usr/bin/awk '$3 ~ \"core/src/components\" {n=split\\($3,a,\"/\"\\); folder=a[4]; changes[folder]+=$1+$2} END {for \\(f in changes\\) print changes[f] \" \" f}' /tmp/mds_numstat.txt)",
+      "Bash(/usr/bin/awk -F'\\\\t' '{n=split\\($3,a,\"/\"\\); key=a[3]\"/\"a[4]; sum[key]+=$1+$2} END {for \\(k in sum\\) printf \"%d %s\\\\n\", sum[k], k}' /tmp/mds_core.txt)",
+      "Bash(/usr/bin/awk -F'\\\\t' '$3 ~ /core\\\\/components\\\\/atoms/ {n=split\\($3,a,\"/\"\\); key=a[4]; sum[key]+=$1+$2} END {for \\(k in sum\\) printf \"%d %s\\\\n\", sum[k], k}' /tmp/mds_core.txt)",
+      "Bash(/usr/bin/awk -F'\\\\t' '$3 ~ /core\\\\/components\\\\/molecules/ {n=split\\($3,a,\"/\"\\); key=a[4]; sum[key]+=$1+$2} END {for \\(k in sum\\) printf \"%d %s\\\\n\", sum[k], k}' /tmp/mds_core.txt)",
+      "Bash(/usr/bin/awk -F'\\\\t' '$3 ~ /core\\\\/components\\\\// {n=split\\($3,a,\"/\"\\); key=a[3]\"/\"a[4]; seen[key]=1} END {c=0; for \\(k in seen\\) c++; print c}' /tmp/mds_core.txt)",
+      "Read(//Users/abhiroop.chaudhuri/Desktop/DEVELOPMENT/MDS/design-system/core/components/**)",
+      "Read(//Users/abhiroop.chaudhuri/Desktop/DEVELOPMENT/MDS/design-system/core/**)",
+      "Read(//Users/abhiroop.chaudhuri/Desktop/DEVELOPMENT/MDS/design-system/**)",
+      "Bash(lsof -iTCP:5175 -sTCP:LISTEN)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5175/projects/wcag)",
+      "Bash(curl -s http://localhost:5175/projects/wcag)",
+      "Bash(git -C /Users/abhiroop.chaudhuri/Desktop/DEVELOPMENT/MDS/design-system fetch --all)",
+      "Bash(git -C /Users/abhiroop.chaudhuri/Desktop/DEVELOPMENT/MDS/design-system branch -a)",
+      "Bash(git clone *)",
+      "Bash(wait)",
+      "Bash(git ls-tree *)",
+      "Bash(grep -E \"useSwitch\\\\.ts$\")",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(./node_modules/.bin/vite build *)"
+    ]
+  }
+}
