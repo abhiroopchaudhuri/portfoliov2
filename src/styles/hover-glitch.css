@@ -1,0 +1,128 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Card hover "demonic" glitch + timeline pulse.
+   Moved out of an inline <style> tag in App.tsx so the CSS is parsed once
+   and cached by the browser instead of being re-inserted on every render.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@keyframes demon-glitch-anim {
+  0%, 100% { transform: translate(0, 0) skewX(0deg); filter: contrast(1) brightness(1) sepia(0) hue-rotate(0deg) blur(0px); }
+
+  /* First distortion: sudden eerie color bleed and shift */
+  10% { transform: translate(0, 0) skewX(0deg); filter: contrast(1) brightness(1) blur(0px); }
+  11% { transform: translate(-3px, 2px) skewX(2deg); filter: contrast(1.4) sepia(0.8) hue-rotate(-30deg) saturate(2) brightness(0.9) blur(1px); }
+  13% { transform: translate(3px, -1px) skewX(-2deg); filter: contrast(1.2) sepia(0.4) saturate(1.5) brightness(1.1) blur(0px); }
+  14% { transform: translate(0, 0) skewX(0deg); filter: contrast(1) brightness(1) sepia(0) blur(0px); }
+
+  /* Second distortion: analog tape slip */
+  45% { transform: translate(0, 0) skewX(0deg); filter: contrast(1) brightness(1) blur(0px); }
+  46% { transform: translate(2px, 3px) skewX(-1deg); filter: contrast(1.5) sepia(1) hue-rotate(-15deg) saturate(2.5) brightness(0.8) blur(2px); }
+  48% { transform: translate(-2px, -2px) skewX(1deg); filter: contrast(1.3) sepia(0.5) hue-rotate(15deg) brightness(1.1) blur(0px); }
+  49% { transform: translate(0, 0) skewX(0deg); filter: contrast(1) brightness(1) blur(0px); }
+
+  /* Third distortion: quick stutter */
+  75% { transform: translate(0, 0) skewX(0deg); filter: contrast(1) brightness(1); }
+  76% { transform: translate(-4px, 0) skewX(3deg); filter: contrast(1.3) hue-rotate(-40deg) saturate(2) brightness(0.9); }
+  77% { transform: translate(4px, 0) skewX(-3deg); filter: contrast(1.1) hue-rotate(20deg) brightness(1.05); }
+  78% { transform: translate(0, 0) skewX(0deg); filter: contrast(1) brightness(1); }
+}
+
+@keyframes demon-scanline-flash {
+  0%, 100% { opacity: 0; background: transparent; }
+
+  10% { opacity: 0; }
+  11% { opacity: 0.5; background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(240, 93, 35, 0.3) 4px, rgba(0, 0, 0, 0.4) 6px); mix-blend-mode: overlay; }
+  13% { opacity: 0; }
+
+  /* Simulating a tracking bar rolling down */
+  45% { opacity: 0; }
+  46% { opacity: 0.6; background: repeating-linear-gradient(0deg, transparent, transparent 40%, rgba(185, 28, 28, 0.4) 45%, transparent 50%); mix-blend-mode: hard-light; background-size: 100% 200%; background-position: 0% 0%; }
+  47% { opacity: 0.6; background-position: 0% 50%; mix-blend-mode: hard-light; }
+  48% { opacity: 0.6; background-position: 0% 100%; mix-blend-mode: hard-light; }
+  49% { opacity: 0; }
+
+  75% { opacity: 0; }
+  76% { opacity: 0.4; background: rgba(0, 0, 0, 0.6); mix-blend-mode: overlay; }
+  77% { opacity: 0.5; background: rgba(240, 93, 35, 0.25); mix-blend-mode: color-burn; }
+  78% { opacity: 0; }
+}
+
+.hover-demonic-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* Only play the glitch when the pointer is *intentionally* over the card.
+   A card receives :hover during momentum-scroll as it slides under a
+   stationary cursor; that was producing random orange flashes. The
+   .is-hover-armed class is toggled from JS on real pointer movement, and
+   is suppressed entirely while the scroll container is actively scrolling. */
+.group.is-hover-armed:hover .hover-demonic-overlay {
+  animation: demon-scanline-flash 4s infinite steps(1);
+  will-change: opacity, background;
+}
+
+.group.is-hover-armed:hover .image-scale-base {
+  animation: demon-glitch-anim 4s infinite steps(1);
+  will-change: transform, filter;
+}
+
+[data-scrolling="1"] .group.is-hover-armed:hover .hover-demonic-overlay,
+[data-scrolling="1"] .group.is-hover-armed:hover .image-scale-base {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .group.is-hover-armed:hover .hover-demonic-overlay,
+  .group.is-hover-armed:hover .image-scale-base {
+    animation: none !important;
+  }
+}
+
+/* Timeline pulse: static shadow on an ::after, animated via
+   transform+opacity (compositor-only) instead of box-shadow spread. */
+@keyframes exp-node-pulse-ring {
+  0%   { transform: scale(0); opacity: 0.95; }
+  70%  { transform: scale(1); opacity: 0; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+.exp-node {
+  box-shadow: 0 0 10px rgba(240, 93, 35, 0.35), 0 0 20px rgba(240, 93, 35, 0.12);
+  position: relative;
+}
+
+.exp-node::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 12px rgba(240, 93, 35, 0.25);
+  transform: scale(0);
+  transform-origin: center;
+  opacity: 0;
+  animation: exp-node-pulse-ring 3s ease-out infinite;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.exp-card {
+  position: relative;
+}
+
+.exp-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.5s;
+  background: linear-gradient(135deg, rgba(240, 93, 35, 0.04) 0%, transparent 50%, rgba(240, 93, 35, 0.02) 100%);
+  pointer-events: none;
+}
+
+.exp-card:hover::before {
+  opacity: 1;
+}

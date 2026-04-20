@@ -103,14 +103,28 @@ const hexChars = "0123456789ABCDEF";
 const DataStream = React.memo(({ delay, x, y }: { delay: number, x: number, y: number }) => {
   const spanRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
     const tick = () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       let str = '';
       for (let i = 0; i < 6; i++) str += hexChars[(Math.random() * 16) | 0];
       if (spanRef.current) spanRef.current.textContent = '0x' + str;
     };
-    tick();
-    const interval = setInterval(tick, 320);
-    return () => clearInterval(interval);
+    const start = () => {
+      if (interval) return;
+      tick();
+      interval = setInterval(tick, 420);
+    };
+    const stop = () => {
+      if (interval) { clearInterval(interval); interval = null; }
+    };
+    const onVis = () => (document.hidden ? stop() : start());
+    start();
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, []);
 
   return (
@@ -1492,7 +1506,7 @@ const AxionParallelCard = React.memo(function AxionParallelCard({ className }: {
 });
 
 const AboutSection = React.memo(() => (
-  <div className="w-full min-w-0 py-24 border-t border-white/10">
+  <div className="cv-auto w-full min-w-0 py-24 border-t border-white/10">
     <div id="about" className="scroll-mt-8" />
     <div className={CAROUSEL_SECTION_BLEED}>
       <FluidTagTitle text="Experience // 02" />
@@ -1812,103 +1826,7 @@ const CertificationsSection = React.memo(() => (
   </div>
 ));
 
-const ImageHoverStyles = () => (
-  <style>{`
-    @keyframes demon-glitch-anim {
-      0%, 100% { transform: translate(0, 0) skewX(0deg); filter: contrast(1) brightness(1) sepia(0) hue-rotate(0deg) blur(0px); }
-      
-      /* First distortion: sudden eerie color bleed and shift */
-      10% { transform: translate(0, 0) skewX(0deg); filter: contrast(1) brightness(1) blur(0px); }
-      11% { transform: translate(-3px, 2px) skewX(2deg); filter: contrast(1.4) sepia(0.8) hue-rotate(-30deg) saturate(2) brightness(0.9) blur(1px); }
-      13% { transform: translate(3px, -1px) skewX(-2deg); filter: contrast(1.2) sepia(0.4) saturate(1.5) brightness(1.1) blur(0px); }
-      14% { transform: translate(0, 0) skewX(0deg); filter: contrast(1) brightness(1) sepia(0) blur(0px); }
-      
-      /* Second distortion: analog tape slip */
-      45% { transform: translate(0, 0) skewX(0deg); filter: contrast(1) brightness(1) blur(0px); }
-      46% { transform: translate(2px, 3px) skewX(-1deg); filter: contrast(1.5) sepia(1) hue-rotate(-15deg) saturate(2.5) brightness(0.8) blur(2px); }
-      48% { transform: translate(-2px, -2px) skewX(1deg); filter: contrast(1.3) sepia(0.5) hue-rotate(15deg) brightness(1.1) blur(0px); }
-      49% { transform: translate(0, 0) skewX(0deg); filter: contrast(1) brightness(1) blur(0px); }
-      
-      /* Third distortion: quick stutter */
-      75% { transform: translate(0, 0) skewX(0deg); filter: contrast(1) brightness(1); }
-      76% { transform: translate(-4px, 0) skewX(3deg); filter: contrast(1.3) hue-rotate(-40deg) saturate(2) brightness(0.9); }
-      77% { transform: translate(4px, 0) skewX(-3deg); filter: contrast(1.1) hue-rotate(20deg) brightness(1.05); }
-      78% { transform: translate(0, 0) skewX(0deg); filter: contrast(1) brightness(1); }
-    }
-
-    @keyframes demon-scanline-flash {
-      0%, 100% { opacity: 0; background: transparent; }
-      
-      10% { opacity: 0; }
-      11% { opacity: 0.5; background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(240, 93, 35, 0.3) 4px, rgba(0, 0, 0, 0.4) 6px); mix-blend-mode: overlay; }
-      13% { opacity: 0; }
-      
-      /* Simulating a tracking bar rolling down */
-      45% { opacity: 0; }
-      46% { opacity: 0.6; background: repeating-linear-gradient(0deg, transparent, transparent 40%, rgba(185, 28, 28, 0.4) 45%, transparent 50%); mix-blend-mode: hard-light; background-size: 100% 200%; background-position: 0% 0%; }
-      47% { opacity: 0.6; background-position: 0% 50%; mix-blend-mode: hard-light; }
-      48% { opacity: 0.6; background-position: 0% 100%; mix-blend-mode: hard-light; }
-      49% { opacity: 0; }
-      
-      75% { opacity: 0; }
-      76% { opacity: 0.4; background: rgba(0, 0, 0, 0.6); mix-blend-mode: overlay; }
-      77% { opacity: 0.5; background: rgba(240, 93, 35, 0.25); mix-blend-mode: color-burn; }
-      78% { opacity: 0; }
-    }
-
-    .hover-demonic-overlay {
-      position: absolute;
-      inset: 0;
-      z-index: 10;
-      pointer-events: none;
-      opacity: 0;
-      will-change: opacity, background, mix-blend-mode;
-    }
-    
-    .group:hover .hover-demonic-overlay {
-      animation: demon-scanline-flash 4s infinite steps(1);
-    }
-
-    .image-scale-base {
-      will-change: transform, filter;
-    }
-    
-    .group:hover .image-scale-base {
-      animation: demon-glitch-anim 4s infinite steps(1);
-    }
-
-    /* ── Timeline premium effects ── */
-    @keyframes exp-node-pulse {
-      0% { box-shadow: 0 0 10px rgba(240,93,35,0.35), 0 0 20px rgba(240,93,35,0.12), 0 0 0 0 rgba(240,93,35,0.25); }
-      70% { box-shadow: 0 0 10px rgba(240,93,35,0.35), 0 0 20px rgba(240,93,35,0.12), 0 0 0 12px rgba(240,93,35,0); }
-      100% { box-shadow: 0 0 10px rgba(240,93,35,0.35), 0 0 20px rgba(240,93,35,0.12), 0 0 0 0 rgba(240,93,35,0); }
-    }
-
-    .exp-node {
-      box-shadow: 0 0 10px rgba(240,93,35,0.35), 0 0 20px rgba(240,93,35,0.12);
-      animation: exp-node-pulse 3s ease-out infinite;
-    }
-
-    .exp-card {
-      position: relative;
-    }
-
-    .exp-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      opacity: 0;
-      transition: opacity 0.5s;
-      background: linear-gradient(135deg, rgba(240,93,35,0.04) 0%, transparent 50%, rgba(240,93,35,0.02) 100%);
-      pointer-events: none;
-    }
-
-    .exp-card:hover::before {
-      opacity: 1;
-    }
-  `}</style>
-);
+/* Hover-glitch + timeline pulse styles live in src/styles/hover-glitch.css. */
 
 /* ─── Section IDs for nav tracking ─── */
 const SECTION_IDS = ['home', 'projects', 'about', 'work', 'certifications'] as const;
@@ -1975,6 +1893,84 @@ export default function App() {
     return () => observer.disconnect();
   }, []);
 
+  // Scroll-state + intentional-hover gates for the demonic hover glitch.
+  // (Fixes "orange flash" during momentum scroll: trackpad scroll emits
+  //  :hover on cards that slide under a stationary cursor, which started
+  //  the steps(1) keyframe animation and produced a flash.)
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    let scrollTimer: ReturnType<typeof setTimeout> | null = null;
+    const onScroll = () => {
+      if (container.dataset.scrolling !== '1') container.dataset.scrolling = '1';
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        container.dataset.scrolling = '';
+      }, 140);
+    };
+    container.addEventListener('scroll', onScroll, { passive: true });
+
+    // Arm a card's hover animation only after the pointer has actually
+    // moved while inside it. Delegated at the container so we don't add
+    // per-card listeners.
+    const armedMap = new WeakMap<Element, { x: number; y: number }>();
+    const MOVE_THRESHOLD_SQ = 4; // ~2px
+
+    const findGroup = (el: EventTarget | null): HTMLElement | null => {
+      let node = el as HTMLElement | null;
+      while (node && node !== container) {
+        if (node.classList && node.classList.contains('group')) return node;
+        node = node.parentElement;
+      }
+      return null;
+    };
+
+    const onPointerOver = (e: PointerEvent) => {
+      const g = findGroup(e.target);
+      if (!g) return;
+      if (!armedMap.has(g)) armedMap.set(g, { x: e.clientX, y: e.clientY });
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (container.dataset.scrolling === '1') return;
+      const g = findGroup(e.target);
+      if (!g) return;
+      const seed = armedMap.get(g);
+      if (!seed) {
+        armedMap.set(g, { x: e.clientX, y: e.clientY });
+        return;
+      }
+      const dx = e.clientX - seed.x;
+      const dy = e.clientY - seed.y;
+      if (dx * dx + dy * dy >= MOVE_THRESHOLD_SQ) {
+        g.classList.add('is-hover-armed');
+      }
+    };
+    const onPointerOut = (e: PointerEvent) => {
+      const g = findGroup(e.target);
+      if (!g) return;
+      // Only disarm when the pointer actually leaves the card (not bubble-out
+      // to a descendant).
+      const related = e.relatedTarget as Node | null;
+      if (related && g.contains(related)) return;
+      g.classList.remove('is-hover-armed');
+      armedMap.delete(g);
+    };
+
+    container.addEventListener('pointerover', onPointerOver);
+    container.addEventListener('pointermove', onPointerMove, { passive: true });
+    container.addEventListener('pointerout', onPointerOut);
+
+    return () => {
+      container.removeEventListener('scroll', onScroll);
+      container.removeEventListener('pointerover', onPointerOver);
+      container.removeEventListener('pointermove', onPointerMove);
+      container.removeEventListener('pointerout', onPointerOut);
+      if (scrollTimer) clearTimeout(scrollTimer);
+      container.dataset.scrolling = '';
+    };
+  }, []);
+
   const scrollToSection = useCallback((sectionId: SectionId) => {
     return (e: React.MouseEvent) => {
       e.preventDefault();
@@ -1990,7 +1986,6 @@ export default function App() {
 
   return (
     <main className="h-screen w-full bg-[#030303] text-white overflow-hidden flex relative selection:bg-[#F05D23] selection:text-black">
-      <ImageHoverStyles />
       <NoiseOverlay />
       <BackgroundChaseScene />
 
