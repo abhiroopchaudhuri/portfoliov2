@@ -25,7 +25,14 @@
       "Bash(grep -E \"useSwitch\\\\.ts$\")",
       "Bash(./node_modules/.bin/tsc --noEmit)",
       "Bash(./node_modules/.bin/vite build *)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(awk 'NR>=1815 && NR<=1935 {print NR\": \"$0}' /Users/abhiroop.chaudhuri/Desktop/DEVELOPMENT/Portfolio-2/portfoliov2/src/app/App.tsx)",
+      "Bash(grep -n '`')",
+      "Bash(ffmpeg -version)",
+      "Bash(sips -g pixelWidth -g pixelHeight /Users/abhiroop.chaudhuri/Desktop/DEVELOPMENT/Portfolio-2/portfoliov2/public/frames/ezgif-frame-001.webp)",
+      "Bash(command -v ffmpeg)",
+      "Bash(command -v brew)",
+      "Bash(npm uninstall *)"
     ]
   }
 }

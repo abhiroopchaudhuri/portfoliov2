@@ -678,8 +678,15 @@
   opacity: 1;
 }
 
-/* Skip rendering for off-screen content until the browser needs it */
+/* Skip rendering for off-screen content until the browser needs it.
+   Must pair with contain-intrinsic-size to avoid CLS — size placeholders are
+   conservative upper-bounds matching observed heights of each section so
+   scrollbar geometry stays stable when the browser skips render. */
 .cv-auto {
   content-visibility: auto;
-  contain-intrinsic-size: auto 800px;
+  contain-intrinsic-size: auto 1400px;
+}
+/* About/Experience timeline is the tallest section. */
+.cv-auto:has(> [id="about"]) {
+  contain-intrinsic-size: auto 2400px;
 }
