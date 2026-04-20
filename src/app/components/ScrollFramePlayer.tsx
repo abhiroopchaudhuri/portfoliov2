@@ -3,29 +3,56 @@ import { useEffect, useRef, useCallback } from 'react';
 /**
  * Scroll-driven hero background.
  *
- * Originally a 300-frame WebP sequence (~26 MB, choppy first seconds). Now
- * backed by a single H.264 MP4 encoded with every frame as a keyframe
+ * Backed by a single H.264 MP4 encoded with every frame as a keyframe
  * (`keyint=1`), so seeks are O(1).
  *
- * Fast-scroll smoothness uses the same approach as Apple's scrollytelling
- * pages and Locomotive/GSAP ScrollTrigger frame-sequences: scroll writes a
- * `target` progress value; a persistent RAF loop eases a `current` value
- * toward the target with linear interpolation and drives
- * `video.currentTime`. Fast scroll moves `target` instantly but `current`
- * chases it smoothly over ~120–200 ms — so the sequence *scrubs fast*
- * instead of snapping to the final position.
+ * Fast-scroll smoothness uses the Apple / Locomotive / GSAP ScrollTrigger
+ * pattern: scroll writes a `target` progress value; a persistent RAF loop
+ * eases a `current` value toward the target with linear interpolation and
+ * drives `video.currentTime`. Fast scroll moves `target` instantly but
+ * `current` chases it smoothly over ~120–400 ms, so the sequence scrubs
+ * fast instead of snapping.
+ *
+ * On low-end devices the per-seek decode cost can exceed a 60 Hz budget,
+ * causing the video to trail the scroll. We detect low-end at mount and
+ * switch to a more decoder-friendly profile: slower tick rate (lower seek
+ * frequency → more time per decode), more aggressive lerp (catches up in
+ * fewer frames), and 1× DPR (less pixel work in drawImage).
  */
 const HERO_VIDEO_SRC = '/hero/hero.mp4';
 
-// Fraction of the remaining distance to close each RAF tick at 60 Hz. Higher
-// = snappier but more jumpy; lower = more cinematic but laggy to input. 0.18
-// at 60 Hz reaches ~99 % in ~22 frames (≈ 370 ms) and feels like a silky
-// inertia without visibly trailing the scrollbar.
-const LERP_FACTOR = 0.18;
+type DeviceTier = 'high' | 'low';
 
-// Consider two progress values equal below this — prevents infinite tiny
-// seeks while at rest and avoids re-driving the decoder on sub-frame noise.
+interface TierProfile {
+  lerp: number;          // fraction of remaining distance to close per tick
+  minTickMs: number;     // minimum milliseconds between ticks (0 = vsync)
+  maxDpr: number;        // DPR clamp for the backing canvas
+}
+
+const PROFILE: Record<DeviceTier, TierProfile> = {
+  high: { lerp: 0.18, minTickMs: 0, maxDpr: 2 },
+  low:  { lerp: 0.35, minTickMs: 32, maxDpr: 1 },
+};
+
 const EPSILON = 1 / 600;
+
+function detectTier(): DeviceTier {
+  if (typeof navigator === 'undefined') return 'high';
+  // Core-count-based heuristic: mainstream laptops have ≥ 8 logical cores.
+  const cores = navigator.hardwareConcurrency ?? 8;
+  // Device memory is only exposed on Chromium; fall back to generous default.
+  const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
+  // CSS-level "update speed" hint — UAs set this based on paint capability.
+  let slowUpdate = false;
+  try {
+    slowUpdate = !!window.matchMedia && window.matchMedia('(update: slow)').matches;
+  } catch { /* noop */ }
+
+  if (cores <= 4) return 'low';
+  if (mem < 4) return 'low';
+  if (slowUpdate) return 'low';
+  return 'high';
+}
 
 interface ScrollFramePlayerProps {
   scrollContainer: React.RefObject<HTMLElement | null>;
@@ -50,6 +77,8 @@ export default function ScrollFramePlayer({ scrollContainer, className, style }:
   const dprRef = useRef(1);
   const pendingResizeRef = useRef(true);
   const rafRef = useRef(0);
+  const lastTickTsRef = useRef(0);
+  const profileRef = useRef<TierProfile>(PROFILE.high);
   const reducedMotionRef = useRef(false);
 
   const drawToCanvas = useCallback(() => {
@@ -88,17 +117,24 @@ export default function ScrollFramePlayer({ scrollContainer, className, style }:
     ctx.drawImage(video, dx, dy, dw, dh);
   }, []);
 
-  // Continuous RAF loop. Always running while the component is mounted and
-  // there is still distance to close between `current` and `target`, so fast
-  // scroll bursts ease in smoothly instead of snapping.
-  const tick = useCallback(() => {
+  const tick = useCallback((now: number) => {
     rafRef.current = 0;
+
+    const profile = profileRef.current;
     const video = videoRef.current;
+
     if (!video || !readyRef.current || !durationRef.current) {
-      // keep waiting for metadata
       rafRef.current = requestAnimationFrame(tick);
       return;
     }
+
+    // Low-end tier: throttle the loop. We still get scheduled every vsync,
+    // but only do work every `minTickMs` ms.
+    if (profile.minTickMs > 0 && now - lastTickTsRef.current < profile.minTickMs) {
+      rafRef.current = requestAnimationFrame(tick);
+      return;
+    }
+    lastTickTsRef.current = now;
 
     const target = targetRef.current;
     let current = currentRef.current;
@@ -106,26 +142,19 @@ export default function ScrollFramePlayer({ scrollContainer, className, style }:
     if (reducedMotionRef.current) {
       current = target;
     } else {
-      current += (target - current) * LERP_FACTOR;
-      // Snap the last tiny bit so we don't loop forever on float noise.
+      current += (target - current) * profile.lerp;
       if (Math.abs(target - current) < EPSILON) current = target;
     }
     currentRef.current = current;
 
-    // Drive the decoder. Only issue a new seek when we've moved at least a
-    // frame's worth; otherwise we wastefully flood the decoder with micro
-    // seeks and never give it time to present a frame.
     if (Math.abs(current - lastAppliedRef.current) > EPSILON) {
       lastAppliedRef.current = current;
-      // Inset slightly from the very end so the clip doesn't wrap to 0.
       const t = Math.min(Math.max(current, 0), 0.999) * durationRef.current;
       video.currentTime = t;
     }
 
     drawToCanvas();
 
-    // Keep the loop alive while we haven't converged. At rest we stop, and
-    // `onScroll` will kick it back on.
     if (Math.abs(target - current) > EPSILON) {
       rafRef.current = requestAnimationFrame(tick);
     }
@@ -137,8 +166,10 @@ export default function ScrollFramePlayer({ scrollContainer, className, style }:
 
   // Mount the video
   useEffect(() => {
-    dprRef.current = Math.min(window.devicePixelRatio || 1, 2);
+    profileRef.current = PROFILE[detectTier()];
+    dprRef.current = Math.min(window.devicePixelRatio || 1, profileRef.current.maxDpr);
     pendingResizeRef.current = true;
+    lastTickTsRef.current = 0;
 
     reducedMotionRef.current =
       typeof window !== 'undefined' &&
@@ -163,19 +194,43 @@ export default function ScrollFramePlayer({ scrollContainer, className, style }:
     document.body.appendChild(video);
     videoRef.current = video;
 
-    const onReady = () => {
+    // Live probe: if the first real seek takes longer than ~60 ms to land,
+    // the device is effectively low-end regardless of static hints. Switch
+    // to the safer profile in-flight.
+    let firstProbed = false;
+    let seekStart = 0;
+    const onLoadedData = () => {
       durationRef.current = video.duration || 0;
       readyRef.current = true;
-      // Force an initial draw at the current target.
       lastAppliedRef.current = -1;
+      // Seek a tiny amount so the onSeeked probe fires even if target == 0.
+      seekStart = performance.now();
+      try { video.currentTime = 0.001; } catch { /* noop */ }
       ensureLoop();
     };
-    video.addEventListener('loadedmetadata', onReady);
-    video.addEventListener('loadeddata', onReady, { once: true });
 
-    // When a seek lands, paint immediately — rVFC gives us the tightest
-    // hook. We don't rely on it for driving the loop (the RAF tick does
-    // that), but it guarantees we draw exactly when a new frame arrives.
+    const onSeekedProbe = () => {
+      if (!firstProbed) {
+        firstProbed = true;
+        const dt = performance.now() - seekStart;
+        if (dt > 60 && profileRef.current !== PROFILE.low) {
+          profileRef.current = PROFILE.low;
+          dprRef.current = Math.min(window.devicePixelRatio || 1, PROFILE.low.maxDpr);
+          pendingResizeRef.current = true;
+        }
+      }
+      drawToCanvas();
+    };
+
+    video.addEventListener('loadedmetadata', () => {
+      durationRef.current = video.duration || 0;
+    });
+    video.addEventListener('loadeddata', onLoadedData, { once: true });
+    video.addEventListener('seeked', onSeekedProbe);
+
+    // Paint every decoded frame via rVFC when available — tighter than
+    // `seeked` alone, covers browsers that don't emit `seeked` for micro
+    // seeks.
     const v = video as VideoWithRVFC;
     let rvfcId = 0;
     const rvfcLoop = () => {
@@ -188,14 +243,9 @@ export default function ScrollFramePlayer({ scrollContainer, className, style }:
       rvfcId = v.requestVideoFrameCallback(rvfcLoop);
     }
 
-    // Also draw on every `seeked` for browsers without rVFC (older Safari).
-    const onSeeked = () => drawToCanvas();
-    video.addEventListener('seeked', onSeeked);
-
     return () => {
-      video.removeEventListener('loadedmetadata', onReady);
-      video.removeEventListener('loadeddata', onReady);
-      video.removeEventListener('seeked', onSeeked);
+      video.removeEventListener('loadeddata', onLoadedData);
+      video.removeEventListener('seeked', onSeekedProbe);
       if (rvfcId && v.cancelVideoFrameCallback) {
         try { v.cancelVideoFrameCallback(rvfcId); } catch { /* noop */ }
       }
@@ -225,7 +275,6 @@ export default function ScrollFramePlayer({ scrollContainer, className, style }:
       ensureLoop();
     };
 
-    // Initial positioning: snap current to target so we don't ease in from 0.
     updateTarget();
     currentRef.current = targetRef.current;
     lastAppliedRef.current = -1;
@@ -242,7 +291,6 @@ export default function ScrollFramePlayer({ scrollContainer, className, style }:
     if (!canvas) return;
     const ro = new ResizeObserver(() => {
       pendingResizeRef.current = true;
-      // Re-draw at the current state.
       const video = videoRef.current;
       if (video) drawToCanvas();
     });
