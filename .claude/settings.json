@@ -24,7 +24,8 @@
       "Bash(git ls-tree *)",
       "Bash(grep -E \"useSwitch\\\\.ts$\")",
       "Bash(./node_modules/.bin/tsc --noEmit)",
-      "Bash(./node_modules/.bin/vite build *)"
+      "Bash(./node_modules/.bin/vite build *)",
+      "Bash(npx vite *)"
     ]
   }
 }
