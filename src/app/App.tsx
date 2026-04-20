@@ -1506,7 +1506,11 @@ const AxionParallelCard = React.memo(function AxionParallelCard({ className }: {
 });
 
 const AboutSection = React.memo(() => (
-  <div className="cv-auto w-full min-w-0 py-24 border-t border-white/10">
+  // Not wrapped in `.cv-auto` — this section uses CAROUSEL_SECTION_BLEED to
+  // paint outside its column, and `content-visibility: auto` enforces
+  // `contain: paint`, which would clip the bleed and hide the first
+  // characters of every line of the intro paragraph.
+  <div className="w-full min-w-0 py-24 border-t border-white/10">
     <div id="about" className="scroll-mt-8" />
     <div className={CAROUSEL_SECTION_BLEED}>
       <FluidTagTitle text="Experience // 02" />
@@ -1660,10 +1664,17 @@ const AboutSection = React.memo(() => (
                                 }}
                               />
                             </div>
-                            {/* Axion card */}
+                            {/* Axion card — anchored to the branch connector
+                                at the bottom; top extends slightly above the
+                                Innovaccer card so the parallel track reads as
+                                larger/independent without moving the base. */}
                             <div
-                              className="relative z-[2] w-full lg:absolute lg:top-0 lg:left-0 lg:right-0 lg:pl-1"
-                              style={{ height: 'calc(100% - var(--axion-branch-top))' }}
+                              className="relative z-[2] w-full lg:absolute lg:left-0 lg:right-0 lg:pl-1"
+                              style={{
+                                top: 'calc(0px - clamp(1.25rem, 2.5vw, 2.5rem))',
+                                height:
+                                  'calc(100% - var(--axion-branch-top) + clamp(1.25rem, 2.5vw, 2.5rem))',
+                              }}
                               role="group"
                               aria-label="AXION LAB parallel track"
                             >
