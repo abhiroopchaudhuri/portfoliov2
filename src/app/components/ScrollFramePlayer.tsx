@@ -241,14 +241,15 @@ function initVideoPath(
   };
   if (v.requestVideoFrameCallback) rvfcId = v.requestVideoFrameCallback(rvfcLoop);
 
-  // Scroll binding
+  // Scroll binding — progress is INVERTED so scroll=0 shows the last frame
+  // and scroll=1 shows the first frame (reverse playback on scroll).
   const container = scrollContainer.current;
   const updateTarget = () => {
     if (!container) return;
     const { scrollTop, scrollHeight, clientHeight } = container;
     const max = scrollHeight - clientHeight;
     if (max <= 0) return;
-    target = Math.min(1, Math.max(0, scrollTop / max));
+    target = Math.min(1, Math.max(0, 1 - scrollTop / max));
     ensureLoop();
   };
   if (container) {
@@ -310,7 +311,8 @@ function initAtlasPath(
     const { scrollTop, scrollHeight, clientHeight } = container;
     const max = scrollHeight - clientHeight;
     if (max <= 0) return;
-    const progress = Math.min(1, Math.max(0, scrollTop / max));
+    // INVERTED: scroll=0 → last frame, scroll=1 → first frame.
+    const progress = Math.min(1, Math.max(0, 1 - scrollTop / max));
     if (worker) {
       worker.postMessage({ kind: 'progress', value: progress });
     } else {
