@@ -84,31 +84,23 @@
   }
 }
 
-/* Timeline pulse: static shadow on an ::after, animated via
-   transform+opacity (compositor-only) instead of box-shadow spread. */
-@keyframes exp-node-pulse-ring {
-  0%   { transform: scale(0); opacity: 0.95; }
-  70%  { transform: scale(1); opacity: 0; }
-  100% { transform: scale(1); opacity: 0; }
-}
-
+/* Timeline nodes: static dot, no pulsing glow. */
 .exp-node {
-  box-shadow: 0 0 10px rgba(240, 93, 35, 0.35), 0 0 20px rgba(240, 93, 35, 0.12);
   position: relative;
 }
 
-.exp-node::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: 0 0 0 12px rgba(240, 93, 35, 0.25);
-  transform: scale(0);
-  transform-origin: center;
-  opacity: 0;
-  animation: exp-node-pulse-ring 3s ease-out infinite;
-  pointer-events: none;
-  will-change: transform, opacity;
+/* Axion branch line — breakpoint-aware right offset so the line ends at the
+   Axion card's left edge on both lg and xl (axion column widths differ). */
+@media (min-width: 1024px) {
+  .axion-branch-line {
+    right: min(17.5rem, 34vw);
+  }
+}
+
+@media (min-width: 1280px) {
+  .axion-branch-line {
+    right: min(19rem, 32vw);
+  }
 }
 
 .exp-card {
@@ -126,6 +118,60 @@
   pointer-events: none;
 }
 
-.exp-card:hover::before {
-  opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+  .exp-card:hover::before {
+    opacity: 1;
+  }
+}
+
+/* ─── Showcase bento tile ───
+ * Self-contained hover; does NOT participate in the demonic-glitch animation
+ * used by the highlight-carousel cards. Every tile animates identically
+ * regardless of its span/size in the bento layout.
+ */
+.showcase-tile-thumb {
+  transform: scale(1);
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1),
+              filter 400ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .showcase-tile:hover .showcase-tile-thumb {
+    transform: scale(1.04);
+  }
+
+  .showcase-tile:hover .showcase-tile-wash {
+    opacity: 1;
+  }
+
+  .showcase-tile:hover .showcase-tile-accent {
+    width: 100%;
+  }
+
+  .showcase-tile:hover .showcase-tile-bracket {
+    border-color: #F05D23;
+  }
+
+  .showcase-tile:hover .showcase-tile-arrow {
+    border-color: #F05D23;
+    background-color: rgba(240, 93, 35, 0.9);
+  }
+
+  .showcase-tile:hover .showcase-tile-arrow svg {
+    color: #000;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .showcase-tile-thumb,
+  .showcase-tile-wash,
+  .showcase-tile-accent,
+  .showcase-tile-bracket,
+  .showcase-tile-arrow {
+    transition: none !important;
+  }
+  .showcase-tile:hover .showcase-tile-thumb {
+    transform: none;
+  }
 }

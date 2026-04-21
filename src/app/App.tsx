@@ -100,6 +100,89 @@ const RadarRings = React.memo(() => (
   </div>
 ));
 
+/* ─── HellCard ───
+ * The default card surface for this site: grid backdrop, radial glow orb,
+ * and four corner brackets. Square corners (no rounded radius). Use as the
+ * outer shell for any content block that needs the "abyss" treatment.
+ */
+type HellCardProps = {
+  children: React.ReactNode;
+  className?: string;
+  /** Hide the glow orb on smaller / tighter tiles. */
+  noGlow?: boolean;
+  /** Orb position — 'tr' default, top-right; 'br' = bottom-right. */
+  orbPosition?: 'tr' | 'br';
+  /** Wrapper element tag. */
+  as?: 'div' | 'section' | 'article';
+  id?: string;
+  role?: string;
+  'aria-label'?: string;
+  style?: React.CSSProperties;
+};
+
+const HellCard = React.memo(function HellCard({
+  children,
+  className,
+  noGlow = false,
+  orbPosition = 'tr',
+  as: Component = 'div',
+  id,
+  role,
+  style,
+  ...rest
+}: HellCardProps) {
+  return (
+    <Component
+      id={id}
+      role={role}
+      aria-label={rest['aria-label']}
+      style={style}
+      className={cn(
+        'relative overflow-hidden border border-white/10',
+        // Translucent dark surface: site background shows through as a faint
+        // blur rather than being fully blocked out.
+        'bg-gradient-to-br from-[#0a0302]/65 via-[#0a0a0a]/55 to-[#050505]/55',
+        'backdrop-blur-xl backdrop-saturate-[1.15]',
+        className,
+      )}
+    >
+      {/* Grid backdrop */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none opacity-30"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(240,93,35,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(240,93,35,0.07) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+          maskImage: 'radial-gradient(ellipse at center, black 10%, transparent 75%)',
+          WebkitMaskImage: 'radial-gradient(ellipse at center, black 10%, transparent 75%)',
+        }}
+      />
+      {/* Glow orb — lighter so it doesn't wash out the right edge */}
+      {!noGlow && (
+        <div
+          aria-hidden
+          className={cn(
+            'absolute w-[380px] h-[380px] rounded-full pointer-events-none',
+            orbPosition === 'tr' ? '-top-32 -right-28' : '-bottom-32 -right-28',
+          )}
+          style={{
+            background: 'radial-gradient(circle, rgba(240,93,35,0.10) 0%, transparent 70%)',
+            filter: 'blur(28px)',
+          }}
+        />
+      )}
+      {/* Corner brackets */}
+      <span className="absolute top-3 left-3 w-3 h-3 border-t border-l border-[#F05D23] pointer-events-none" aria-hidden />
+      <span className="absolute top-3 right-3 w-3 h-3 border-t border-r border-[#F05D23] pointer-events-none" aria-hidden />
+      <span className="absolute bottom-3 left-3 w-3 h-3 border-b border-l border-[#F05D23] pointer-events-none" aria-hidden />
+      <span className="absolute bottom-3 right-3 w-3 h-3 border-b border-r border-[#F05D23] pointer-events-none" aria-hidden />
+
+      <div className="relative z-10">{children}</div>
+    </Component>
+  );
+});
+
 const hexChars = "0123456789ABCDEF";
 const DataStream = React.memo(({ delay, x, y }: { delay: number, x: number, y: number }) => {
   const spanRef = useRef<HTMLSpanElement>(null);
@@ -166,30 +249,44 @@ const ScrambleText = ({ text, className, style, as: Component = "span" }: { text
   const [isHovered, setIsHovered] = useState(false);
   const textRef = useRef<HTMLSpanElement>(null);
   const glitchRef = useRef<HTMLSpanElement>(null);
+  const scrambleRunRef = useRef(0);
   const chars = '!<>-_\\\\/[]{}—=+*^?#________';
 
-  useEffect(() => {
+  // Fire the decrypt scramble only when the cursor leaves (not on enter,
+  // not on mount). Short and snappy.
+  const runScrambleReveal = useCallback(() => {
+    const runId = ++scrambleRunRef.current;
     let iteration = 0;
-    const speed = isHovered ? 1 / 3 : 1 / 2;
+    const speed = 0.9; // faster reveal → shorter animation
     const interval = setInterval(() => {
+      if (runId !== scrambleRunRef.current) {
+        clearInterval(interval);
+        return;
+      }
       const result = text.split('').map((_char, index) => {
         if (index < iteration) return text[index];
         return chars[Math.floor(Math.random() * chars.length)];
       }).join('');
       if (textRef.current) textRef.current.textContent = result;
       if (glitchRef.current) glitchRef.current.textContent = result;
-      if (iteration >= text.length) clearInterval(interval);
+      if (iteration >= text.length) {
+        if (textRef.current) textRef.current.textContent = text;
+        if (glitchRef.current) glitchRef.current.textContent = text;
+        clearInterval(interval);
+      }
       iteration += speed;
-    }, 30);
-    return () => clearInterval(interval);
-  }, [isHovered, text]);
+    }, 22);
+  }, [text]);
 
   return (
     <Component
       className={cn("relative inline-block", className)}
       style={style}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        runScrambleReveal();
+      }}
     >
       <span ref={textRef} className="transition-colors duration-300">{text}</span>
       {isHovered && (
@@ -216,152 +313,6 @@ const GlitchPlus = () => (
   </span>
 );
 
-function statGlitch666(value: string): string {
-  if (value.includes('M')) return '666M+';
-  if (value.endsWith('+')) return '666+';
-  if (value.endsWith('%')) return '666%';
-  return '666';
-}
-
-type GlitchPhase = 'idle' | 'pre' | 'hold' | 'post';
-
-const GlitchStatNumber = ({ value, staggerMs }: { value: string; staggerMs: number }) => {
-  const [phase, setPhase] = useState<GlitchPhase>('idle');
-  const [flicker, setFlicker] = useState(false);
-  const demon = useMemo(() => statGlitch666(value), [value]);
-  const rafRef = useRef(0);
-  const origRef = useRef<HTMLSpanElement>(null);
-  const demonRef = useRef<HTMLSpanElement>(null);
-  const [dims, setDims] = useState<{ orig: number; demon: number } | null>(null);
-
-  useLayoutEffect(() => {
-    const mo = origRef.current;
-    const md = demonRef.current;
-    if (mo && md) {
-      setDims({
-        orig: mo.getBoundingClientRect().width,
-        demon: md.getBoundingClientRect().width,
-      });
-    }
-  }, [value, demon]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    let cancelled = false;
-    const ids: ReturnType<typeof setTimeout>[] = [];
-
-    const flickerSequence = (
-      duration: number,
-      demonProb: number,
-      onDone: () => void
-    ) => {
-      const start = performance.now();
-      let last = 0;
-      const step = (now: number) => {
-        if (cancelled) return;
-        if (now - start >= duration) {
-          setFlicker(false);
-          onDone();
-          return;
-        }
-        const interval = 40 + Math.random() * 60;
-        if (now - last > interval) {
-          last = now;
-          setFlicker(Math.random() < demonProb);
-        }
-        rafRef.current = requestAnimationFrame(step);
-      };
-      rafRef.current = requestAnimationFrame(step);
-    };
-
-    const runGlitch = () => {
-      if (cancelled) return;
-
-      setPhase('pre');
-      flickerSequence(180, 0.35, () => {
-        if (cancelled) return;
-        setPhase('hold');
-        setFlicker(true);
-        ids.push(setTimeout(() => {
-          if (cancelled) return;
-          setPhase('post');
-          flickerSequence(160, 0.3, () => {
-            if (cancelled) return;
-            setPhase('idle');
-            setFlicker(false);
-            scheduleNext();
-          });
-        }, 280));
-      });
-    };
-
-    const scheduleNext = () => {
-      const delay = 12000 + Math.random() * 6000;
-      ids.push(setTimeout(() => {
-        if (!cancelled) runGlitch();
-      }, delay));
-    };
-
-    ids.push(setTimeout(() => {
-      if (!cancelled) runGlitch();
-    }, staggerMs));
-
-    return () => {
-      cancelled = true;
-      ids.forEach(clearTimeout);
-      cancelAnimationFrame(rafRef.current);
-    };
-  }, [staggerMs]);
-
-  const active = phase !== 'idle';
-  const showDemon = phase === 'hold' || (active && flicker);
-  const wantsWide = phase === 'pre' || phase === 'hold';
-  const explicitWidth = dims
-    ? wantsWide
-      ? dims.demon
-      : dims.orig
-    : undefined;
-
-  return (
-    <span
-      className="perf-stat-glitch-wrap"
-      style={{
-        fontWeight: 700,
-        width: explicitWidth != null ? `${explicitWidth}px` : undefined,
-      }}
-    >
-      <span ref={origRef} className="perf-stat-measure" aria-hidden>
-        {value}
-      </span>
-      <span ref={demonRef} className="perf-stat-measure" aria-hidden>
-        {demon}
-      </span>
-      <span className="perf-stat-glitch-clip" style={dims ? { width: '100%' } : undefined}>
-        <span
-          className={cn(
-            'text-[#F05D23] tabular-nums whitespace-nowrap relative z-[1]',
-            active && 'perf-stat-glitch-active'
-          )}
-        >
-          {showDemon ? demon : value}
-        </span>
-        {active && (
-          <>
-            <span className="perf-stat-aberr-r" aria-hidden>
-              {showDemon ? demon : value}
-            </span>
-            <span className="perf-stat-aberr-c" aria-hidden>
-              {showDemon ? demon : value}
-            </span>
-            <span className="perf-stat-scanline" aria-hidden />
-          </>
-        )}
-      </span>
-    </span>
-  );
-};
 
 /* ─── Story Hover Underline ─── */
 const StoryUnderline = ({ isHovered }: { isHovered: boolean }) => {
@@ -465,7 +416,7 @@ const NavLink = ({ children, href = "#", className, isActive = false, onClick }:
 
 
 const carouselTooltipContentClass = cn(
-  'z-[200] max-w-[min(22rem,calc(100vw-2rem))] rounded-sm border border-[#F05D23]/45',
+  'z-[200] max-w-[min(22rem,calc(100vw-2rem))] border border-[#F05D23]/45',
   'bg-[#080808]/98 px-4 py-3.5 text-left shadow-[0_0_32px_-8px_rgba(240,93,35,0.55),inset_0_1px_0_rgba(255,255,255,0.06)]',
   'backdrop-blur-md outline-none',
   'animate-in fade-in-0 zoom-in-95 duration-150'
@@ -600,6 +551,15 @@ const SmoothCarousel = React.memo(() => {
           return e.pointerType === 'touch';
         }
         return e.type.startsWith('touch');
+      },
+      // Mobile: one-at-a-time snap with centered active card.
+      breakpoints: {
+        '(max-width: 767px)': {
+          align: 'center',
+          skipSnaps: false,
+          dragFree: false,
+          containScroll: false,
+        },
       },
     },
     [autoplayPlugin.current]
@@ -755,12 +715,12 @@ const SmoothCarousel = React.memo(() => {
           className="cursor-default overflow-x-clip overflow-y-visible py-4 overscroll-x-contain [overflow-clip-margin:3rem] [touch-action:pan-x_pan-y]"
           role="presentation"
         >
-          <div className="ml-[-8px] flex items-stretch [touch-action:pan-x_pan-y]">
+          <div className="flex items-stretch [touch-action:pan-x_pan-y]">
             {CAROUSEL_PROJECTS.map((proj, idx) => {
               return (
                 <div
                   key={proj.id}
-                  className="box-border flex min-h-0 min-w-0 shrink-0 grow-0 basis-[82%] pl-4 sm:basis-[52%] lg:basis-[38%]"
+                  className="box-border flex min-h-0 min-w-0 shrink-0 grow-0 basis-[82%] sm:basis-[52%] lg:basis-[38%]"
                 >
                   <div className="carousel-card-shell group relative flex min-h-0 w-full flex-1 hover:z-10">
                     <div className="carousel-card-shell-glow" aria-hidden />
@@ -769,7 +729,7 @@ const SmoothCarousel = React.memo(() => {
                       tabIndex={0}
                       aria-label={`Open project: ${proj.title}`}
                       className={cn(
-                        'carousel-project-card relative z-[2] flex min-h-0 w-full cursor-pointer flex-col overflow-hidden rounded-sm bg-[#0a0a0a]',
+                        'carousel-project-card relative z-[2] flex min-h-0 w-full cursor-pointer flex-col overflow-hidden bg-[#0a0a0a]',
                         'outline-none focus-visible:ring-2 focus-visible:ring-[#F05D23]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]'
                       )}
                       onClick={(e) => {
@@ -1089,22 +1049,26 @@ const AXION_BRANCH_TOP_PCT = parallelBranchTopPct(
   ABOUT_AXION_BRANCH.anchorJobEnd,
 );
 
-/** Horizontal segment from timeline node toward the card (trunk → experience box). */
+/** Thin, clean horizontal connector from the trunk dot to the card's left
+ * edge. No glow, no rounded-rectangle gradient — just a 1px orange line so
+ * the dot reads as wired to its card.
+ *
+ * Horizontal math (matches the dot in the <li>):
+ *   mobile (pl-3=12, w-10=40)  → trunk at 32px from parent, li at 52px, so
+ *                                the dot sits at left:-20px. A connector
+ *                                drawn from left:-20px + dot radius (6px)
+ *                                to left:0 of li is 14px wide.
+ *   desktop (pl-5=20, w-14=56) → trunk at 48px from parent, li at 76px, so
+ *                                dot at left:-28px. Connector from
+ *                                left:-28 + dot radius (7px) to left:0
+ *                                is 21px wide.
+ */
 function ExperienceNodeConnector() {
   return (
-    <div
-      className="pointer-events-none absolute left-0 top-[1.4375rem] z-0 -translate-x-full md:top-[1.625rem]"
+    <span
       aria-hidden
-    >
-      <div
-        className="w-5 md:w-7"
-        style={{
-          height: '2px',
-          background: 'linear-gradient(to right, transparent 0%, rgba(240,93,35,0.2) 30%, rgba(240,93,35,0.5))',
-          boxShadow: '0 0 8px rgba(240,93,35,0.12)',
-        }}
-      />
-    </div>
+      className="pointer-events-none absolute top-[1.5rem] md:top-[1.75rem] z-[1] h-px bg-[#F05D23]/55 left-[-0.875rem] w-[0.875rem] md:left-[-1.3125rem] md:w-[1.3125rem]"
+    />
   );
 }
 
@@ -1112,7 +1076,7 @@ const AxionParallelCard = React.memo(function AxionParallelCard({ className }: {
   return (
     <div
       className={cn(
-        'flex flex-col justify-center rounded-lg',
+        'relative flex flex-col justify-center',
         'border border-white/[0.08] border-l-[2px] border-l-[#F05D23]/60 bg-black/50 px-3 py-2.5',
         'shadow-[inset_0_1px_0_0_rgb(255_255_255_/0.04)]',
         className,
@@ -1126,6 +1090,24 @@ const AxionParallelCard = React.memo(function AxionParallelCard({ className }: {
         <span className="text-[#666]"> — </span>
         <span className="normal-case tracking-wide text-[#999]">Founded open-source non-profit &amp; non-commercial org</span>
       </p>
+
+      {/* Hanging tag — straddles the bottom-right card stroke (only the
+         tag's top ~2px overlap the border). Tag height ≈18px; offsetting
+         by -16px leaves just the top inside the card, so the tag is fully
+         clear of the description text above. */}
+      <div
+        className="pointer-events-none absolute z-[4] flex items-center gap-1.5 bg-[#0a0302] border border-[#F05D23]/75 px-2 py-0.5 shadow-[0_0_14px_rgba(240,93,35,0.35)]"
+        style={{ bottom: '-16px', right: '12px' }}
+        aria-hidden
+      >
+        <span className="w-1 h-1 rounded-full bg-[#F05D23] shadow-[0_0_6px_#F05D23]" />
+        <span
+          className="font-mono text-[8.5px] md:text-[9px] tracking-[0.18em] uppercase text-[#F05D23]"
+          style={{ textShadow: '0 0 8px rgba(240,93,35,0.4)', fontWeight: 700 }}
+        >
+          Opensource <span className="text-[#F05D23]/60">+</span> Non-profit
+        </span>
+      </div>
     </div>
   );
 });
@@ -1136,18 +1118,57 @@ const AboutSection = React.memo(() => (
   // `contain: paint`, which would clip the bleed and hide the first
   // characters of every line of the intro paragraph.
   <div className="w-full min-w-0 py-14 md:py-24 border-t border-white/10">
-    <div id="about" className="scroll-mt-20 md:scroll-mt-8" />
+    <div id="experience" className="scroll-mt-20 md:scroll-mt-8" />
     <div className={CAROUSEL_SECTION_BLEED}>
       <FluidTagTitle text="Experience // 02" />
 
-      <div
+      <HellCard
         className={cn(
-          'mt-2 box-border w-full max-w-none overflow-visible rounded-2xl border border-white/[0.09]',
-          'bg-[rgb(14_14_14_/0.5)] shadow-[0_28px_80px_rgb(0_0_0_/0.45),inset_0_1px_0_0_rgb(255_255_255_/0.06)]',
-          'backdrop-blur-2xl backdrop-saturate-[1.2]',
-          'px-6 py-9 sm:px-9 sm:py-10 md:px-12 md:py-12',
+          'mt-2 box-border w-full max-w-none',
+          // Tighter inner padding per feedback.
+          'px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8',
         )}
       >
+        {/* Orange "hello" glyph — in-flow block, clear from the paragraph */}
+        <motion.div
+          aria-hidden
+          className="mb-4 md:mb-5 block select-none"
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="relative inline-flex items-center gap-2 px-3 py-1.5 bg-[#0a0302] border border-[#F05D23]/60 shadow-[0_0_18px_rgba(240,93,35,0.35),inset_0_1px_0_rgba(255,255,255,0.05)]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#F05D23] shadow-[0_0_8px_#F05D23] animate-pulse" aria-hidden />
+            <span
+              className="font-mono text-[12px] md:text-[13px] font-bold tracking-[0.22em] uppercase text-[#F05D23]"
+              style={{ textShadow: '0 0 12px rgba(240,93,35,0.55)' }}
+            >
+              hello()
+            </span>
+            {/* Tiny waving hand SVG */}
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#F05D23"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="-ml-0.5"
+            >
+              <path d="M8 13V5.5a1.5 1.5 0 013 0V11" />
+              <path d="M11 11V4a1.5 1.5 0 013 0v7" />
+              <path d="M14 11V5.5a1.5 1.5 0 013 0V13" />
+              <path d="M17 11V7.5a1.5 1.5 0 013 0v6a8 8 0 01-14 5.5l-3.5-5a1.5 1.5 0 012.2-2l2.3 2" />
+            </svg>
+            {/* Bracket decorations */}
+            <span className="absolute -top-1 -left-1 w-1.5 h-1.5 border-t border-l border-[#F05D23]" aria-hidden />
+            <span className="absolute -bottom-1 -right-1 w-1.5 h-1.5 border-b border-r border-[#F05D23]" aria-hidden />
+          </div>
+        </motion.div>
+
         <motion.p
           className="w-full min-w-0 max-w-none font-mono text-[16px] leading-[1.85] tracking-wide text-[#e4e4e4] [overflow-wrap:anywhere]"
           initial={{ opacity: 0, y: 20 }}
@@ -1161,28 +1182,38 @@ const AboutSection = React.memo(() => (
           the intersection of human-centered design and cutting-edge technology.
         </motion.p>
 
-      <div className="relative mt-10 border-t border-white/[0.06] pt-10 md:mt-12 md:pt-12">
-        <div className="flex gap-0 pl-3 md:pl-5">
+      <div className="relative mt-6 border-t border-white/[0.06] pt-6 md:mt-8 md:pt-8">
+        <div className="flex gap-0 pl-0 md:pl-5">
           <div className="relative w-10 shrink-0 md:w-14" aria-hidden>
-            <motion.div
-              className="pointer-events-none absolute left-1/2 top-3 bottom-3 -translate-x-1/2 origin-top"
-              style={{
-                width: '2px',
-                background: 'linear-gradient(to bottom, rgba(240,93,35,0.9), rgba(240,93,35,0.45) 50%, rgba(255,255,255,0.08))',
-                boxShadow: '0 0 14px rgba(240,93,35,0.2), 0 0 40px rgba(240,93,35,0.06)',
-              }}
-              initial={{ scaleY: 0 }}
-              whileInView={{ scaleY: 1 }}
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
-            />
+            {/* Wrapper handles the -50% x-centering; the inner motion.div
+                only animates scaleY so Framer's inline transform doesn't
+                clobber the translateX that centers the line in-column. */}
+            <div
+              className="pointer-events-none absolute left-1/2 top-3 bottom-3 z-[1]"
+              style={{ width: '2px', transform: 'translateX(-50%)' }}
+            >
+              <motion.div
+                className="absolute inset-0 origin-top"
+                style={{
+                  background: 'linear-gradient(to bottom, rgba(240,93,35,0.95), rgba(240,93,35,0.55) 50%, rgba(255,255,255,0.1))',
+                  boxShadow: '0 0 14px rgba(240,93,35,0.25), 0 0 40px rgba(240,93,35,0.08)',
+                }}
+                initial={{ scaleY: 0 }}
+                whileInView={{ scaleY: 1 }}
+                viewport={{ once: true, margin: '-80px' }}
+                transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
+              />
+            </div>
             {/* Ambient glow haze behind trunk */}
             <div
-              className="pointer-events-none absolute left-1/2 top-3 bottom-3 w-6 -translate-x-1/2 rounded-full opacity-[0.12] blur-xl"
-              style={{ background: 'linear-gradient(to bottom, #F05D23, transparent 85%)' }}
+              className="pointer-events-none absolute left-1/2 top-3 bottom-3 w-6 rounded-full opacity-[0.12] blur-xl"
+              style={{
+                background: 'linear-gradient(to bottom, #F05D23, transparent 85%)',
+                transform: 'translateX(-50%)',
+              }}
             />
           </div>
-          <ol className="relative m-0 min-w-0 flex-1 list-none space-y-12 md:space-y-14 p-0" aria-label="Work experience">
+          <ol className="relative m-0 min-w-0 flex-1 list-none space-y-8 md:space-y-10 p-0" aria-label="Work experience">
             {ABOUT_EXPERIENCE.map((item, i) => {
               const motionProps = {
                 initial: { opacity: 0, y: 36, filter: 'blur(6px)' },
@@ -1198,8 +1229,10 @@ const AboutSection = React.memo(() => (
               const employmentCard = (
                 <div
                   className={cn(
-                    'exp-card relative z-[1] flex flex-col gap-6 rounded-xl sm:flex-row sm:items-start sm:justify-between sm:gap-8',
-                    'border border-white/[0.06] bg-[rgba(8,8,8,0.55)] px-5 py-5 sm:px-6 sm:py-6',
+                    'exp-card relative z-[2] flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-6',
+                    // Fully opaque so the long branch connector behind the
+                    // card is hidden (not bleeding through a translucent bg).
+                    'border border-white/[0.06] bg-[#080808] px-4 py-4 sm:px-5 sm:py-5',
                     'shadow-[inset_0_1px_0_0_rgb(255_255_255_/0.05)]',
                     'transition-all duration-500 hover:border-[#F05D23]/20 hover:bg-[rgba(14,10,8,0.65)]',
                     'hover:shadow-[inset_0_1px_0_0_rgb(255_255_255_/0.05),0_0_40px_rgba(240,93,35,0.04),0_8px_32px_rgba(0,0,0,0.3)]',
@@ -1226,17 +1259,22 @@ const AboutSection = React.memo(() => (
                     )}
                   </div>
                   {item.logoSrc && (
-                    <div className="shrink-0 sm:pt-0.5">
-                      <div className="relative size-[72px] overflow-hidden rounded-xl border border-white/[0.12] bg-[rgb(10_10_10_/0.9)] shadow-[0_8px_32px_rgb(0_0_0_/0.4)]">
+                    <div className="hidden sm:block shrink-0 sm:pt-0.5">
+                      <div className="relative size-[72px] overflow-hidden border border-[#F05D23]/30 bg-[rgb(10_10_10_/0.9)] shadow-[0_8px_32px_rgb(0_0_0_/0.4)]">
                         <img
                           src={item.logoSrc}
                           alt={item.logoAlt}
                           width={72}
                           height={72}
-                          className="size-[72px] object-cover"
+                          className="block size-full object-cover"
                           loading="lazy"
                           decoding="async"
                         />
+                        {/* Consistent corner brackets — same treatment for every logo */}
+                        <span className="pointer-events-none absolute top-1 left-1 w-2 h-2 border-t border-l border-[#F05D23]" aria-hidden />
+                        <span className="pointer-events-none absolute top-1 right-1 w-2 h-2 border-t border-r border-[#F05D23]" aria-hidden />
+                        <span className="pointer-events-none absolute bottom-1 left-1 w-2 h-2 border-b border-l border-[#F05D23]" aria-hidden />
+                        <span className="pointer-events-none absolute bottom-1 right-1 w-2 h-2 border-b border-r border-[#F05D23]" aria-hidden />
                       </div>
                     </div>
                   )}
@@ -1252,7 +1290,7 @@ const AboutSection = React.memo(() => (
                     aria-label={`${item.company} employment with parallel AXION LAB branch`}
                   >
                     <span
-                      className="exp-node absolute left-0 top-4 z-[2] size-3.5 -translate-x-[calc(1.25rem+0.4375rem)] rounded-full border-2 border-[#F05D23] bg-[rgb(8_8_8)] md:-translate-x-[calc(1.75rem+0.5rem)] md:top-[1.125rem] md:size-4"
+                      className="exp-node absolute top-[1.125rem] z-[2] h-3 w-3 rounded-full bg-[#F05D23] shadow-[0_0_10px_rgba(240,93,35,0.9)] md:h-3.5 md:w-3.5 md:top-[1.3125rem] left-[-1.25rem] md:left-[-1.75rem] -translate-x-1/2"
                       aria-hidden
                     />
                     <ExperienceNodeConnector />
@@ -1264,6 +1302,25 @@ const AboutSection = React.memo(() => (
                         } as React.CSSProperties
                       }
                     >
+                      {/* Long branch connector — runs from the main trunk,
+                          behind the Total AI employment card (which is z-[2]
+                          with an opaque bg), out to the Axion card's left
+                          edge. Uses `right: var(--axion-col-right)` set in a
+                          tiny style block below so the same rule works on
+                          lg and xl (different axion column widths). */}
+                      <div
+                        className="axion-branch-line hidden lg:block pointer-events-none absolute z-0"
+                        style={{
+                          top: 'calc(100% - var(--axion-branch-top))',
+                          transform: 'translateY(-50%)',
+                          left: '-1.75rem',
+                          height: '2px',
+                          background:
+                            'linear-gradient(to right, rgba(240,93,35,0.9) 0%, rgba(240,93,35,0.55) 50%, rgba(240,93,35,0.9) 100%)',
+                          boxShadow: '0 0 10px rgba(240,93,35,0.15)',
+                        }}
+                        aria-hidden
+                      />
                       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_min(17.5rem,34vw)] lg:items-stretch lg:gap-5 xl:grid-cols-[minmax(0,1fr)_min(19rem,32vw)]">
                         <div className="min-w-0">{employmentCard}</div>
                         <div className="relative mt-0 min-h-0 w-full lg:mt-0 lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:self-stretch">
@@ -1274,7 +1331,7 @@ const AboutSection = React.memo(() => (
                             <AxionParallelCard />
                           </div>
                           <div className="relative hidden min-h-0 flex-1 overflow-visible lg:block">
-                            {/* Branch connector line */}
+                            {/* Small connector stub across the grid gap into the Axion card */}
                             <div
                               className="pointer-events-none absolute left-0 z-[3] -translate-x-full -translate-y-1/2"
                               style={{ top: 'calc(100% - var(--axion-branch-top))' }}
@@ -1284,7 +1341,7 @@ const AboutSection = React.memo(() => (
                                 className="w-7 md:w-8"
                                 style={{
                                   height: '2px',
-                                  background: 'linear-gradient(to right, rgba(240,93,35,0.2), rgba(240,93,35,0.55))',
+                                  background: 'linear-gradient(to right, rgba(240,93,35,0.55), rgba(240,93,35,0.85))',
                                   boxShadow: '0 0 10px rgba(240,93,35,0.15)',
                                 }}
                               />
@@ -1316,7 +1373,7 @@ const AboutSection = React.memo(() => (
               return (
                 <motion.li key={`${item.company}-${item.range}`} className="relative" {...motionProps}>
                   <span
-                    className="exp-node absolute left-0 top-4 z-[2] size-3.5 -translate-x-[calc(1.25rem+0.4375rem)] rounded-full border-2 border-[#F05D23] bg-[rgb(8_8_8)] md:-translate-x-[calc(1.75rem+0.5rem)] md:top-[1.125rem] md:size-4"
+                    className="exp-node absolute top-[1.125rem] z-[2] h-3 w-3 rounded-full bg-[#F05D23] shadow-[0_0_10px_rgba(240,93,35,0.9)] md:h-3.5 md:w-3.5 md:top-[1.3125rem] left-[-1.25rem] md:left-[-1.75rem] -translate-x-1/2"
                     aria-hidden
                   />
                   <ExperienceNodeConnector />
@@ -1327,71 +1384,122 @@ const AboutSection = React.memo(() => (
           </ol>
         </div>
       </div>
-      </div>
+      </HellCard>
     </div>
   </div>
 ));
 
-const WORK_CARDS = [
-  {
-    title: 'Product Design',
-    subtitle: 'UI / UX',
-    description:
-      'End-to-end product design — from user research and wireframing to high-fidelity prototypes and design systems. Crafting intuitive interfaces that users love.',
-    image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?q=80&w=1080',
-  },
-  {
-    title: 'Vibe Coding',
-    subtitle: 'AI-Powered',
-    description:
-      'Leveraging AI agentic workflows and modern tooling to rapidly prototype, iterate, and ship products. Building at the speed of thought with an AI-first approach.',
-    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=1080',
-  },
-  {
-    title: 'Development',
-    subtitle: 'Pre-AI Era',
-    description:
-      'Full-stack development with React, Node.js, and modern web technologies. Years of hands-on coding experience building scalable, performant applications from scratch.',
-    image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=1080',
-  },
-];
+/* ─── Showcase gallery tile ───
+ * A simple uniform gallery card — every tile is identical in shape and
+ * behaviour. Cover image on top, title below, short description. Renders
+ * every project, arranged in a 3-column grid on desktop.
+ */
+const ShowcaseGalleryCard = ({
+  project,
+  index,
+}: {
+  project: CarouselProject;
+  index: number;
+}) => {
+  const navigate = useNavigate();
+
+  const open = () => {
+    const u = project.cardUrl?.trim() || project.links?.live?.trim() || project.links?.github?.trim() || '';
+    if (!u) return;
+    if (isInternalCardHref(u)) navigate(u);
+    else window.open(u, '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <motion.div
+      role="link"
+      tabIndex={0}
+      aria-label={`Open ${project.title}`}
+      onClick={open}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          open();
+        }
+      }}
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.5, delay: 0.04 * (index % 9), ease: [0.16, 1, 0.3, 1] }}
+      className={cn(
+        'showcase-tile relative flex flex-col cursor-pointer overflow-hidden',
+        'bg-[#0a0a0a] border border-white/[0.08] hover:border-[#F05D23]/55',
+        'transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#F05D23]/60',
+      )}
+    >
+      {/* Cover image — fixed aspect so every tile has the same shape */}
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#050505]">
+        <div
+          className="showcase-tile-thumb absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${project.thumbnail})` }}
+        />
+        <div
+          className="showcase-tile-wash absolute inset-0 pointer-events-none opacity-0"
+          style={{
+            background: 'linear-gradient(135deg, rgba(240,93,35,0.2) 0%, transparent 70%)',
+            transition: 'opacity 400ms cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+          aria-hidden
+        />
+        {/* Arrow */}
+        <div className="showcase-tile-arrow absolute top-3 right-3 z-10 w-9 h-9 rounded-full border border-white/15 bg-black/55 backdrop-blur-md flex items-center justify-center transition-all duration-300">
+          <ArrowUpRight className="w-4 h-4 text-white/80 transition-colors" />
+        </div>
+        {/* Index */}
+        <div className="absolute top-3 left-3 z-10 font-mono text-[10px] tracking-[0.3em] text-white/80 uppercase bg-black/55 backdrop-blur-sm px-2 py-0.5">
+          // {String(index + 1).padStart(2, '0')}
+        </div>
+      </div>
+
+      {/* Title + description — tooltip fires only when the line-clamp
+          actually truncates; the card still navigates on click. */}
+      <div className="relative flex flex-col gap-2 px-4 md:px-5 py-4 md:py-5">
+        <CarouselTruncationTooltip
+          fullText={project.title}
+          lineClamp={2}
+          side="bottom"
+          tooltipLabel="Full title"
+          onTruncatedBodyActivate={open}
+          className="font-mono text-[14px] md:text-[15px] tracking-[0.12em] uppercase leading-tight text-white"
+        />
+        <CarouselTruncationTooltip
+          fullText={project.details}
+          lineClamp={3}
+          side="top"
+          tooltipLabel="Full description"
+          onTruncatedBodyActivate={open}
+          className="font-mono text-[13px] leading-relaxed tracking-wide text-[#9a9a9a]"
+        />
+        <span
+          className="showcase-tile-accent absolute left-0 bottom-0 h-[2px] w-0 bg-gradient-to-r from-[#F05D23] via-[#ff9a5c] to-transparent transition-all duration-500"
+          aria-hidden
+        />
+      </div>
+
+      {/* Corner brackets */}
+      <span className="showcase-tile-bracket pointer-events-none absolute top-1.5 left-1.5 w-2.5 h-2.5 border-t border-l border-[#F05D23]/40 transition-colors duration-300 z-[3]" aria-hidden />
+      <span className="showcase-tile-bracket pointer-events-none absolute bottom-1.5 right-1.5 w-2.5 h-2.5 border-b border-r border-[#F05D23]/40 transition-colors duration-300 z-[3]" aria-hidden />
+    </motion.div>
+  );
+};
 
 const MyWorkSection = React.memo(() => (
   <div className="cv-auto w-full py-14 md:py-24 border-t border-white/10">
-    <div id="work" className="scroll-mt-20 md:scroll-mt-8" />
-    <FluidTagTitle text="My Work // 03" />
+    <div id="showcase" className="scroll-mt-20 md:scroll-mt-8" />
+    <FluidTagTitle text="Showcase // 03" />
 
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {WORK_CARDS.map((card, i) => (
-        <div
-          key={i}
-          className="group relative bg-[#0a0a0a] border border-white/5 overflow-hidden hover:border-[#F05D23]/40 transition-all duration-500"
-        >
-          <div className="relative h-[220px] overflow-hidden">
-            <div
-              className="about-panel-bg absolute inset-0 bg-cover bg-center image-scale-base"
-              style={{ backgroundImage: `url(${card.image})` }}
-            />
-            <div className="hover-demonic-overlay" />
-            <div className="absolute top-4 left-5 z-10 pointer-events-none">
-              <span 
-                className="font-mono text-[13px] tracking-widest text-[#F05D23] uppercase bg-[#0a0a0a]/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#F05D23]/50 shadow-[0_0_15px_rgba(240,93,35,0.15)] flex items-center gap-2"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#F05D23] shadow-[0_0_8px_#F05D23]" />
-                {card.subtitle}
-              </span>
-            </div>
-          </div>
-          <div className="p-6">
-            <h4 className="font-mono text-lg tracking-wide text-white mb-3 uppercase">{card.title}</h4>
-            <p className="font-mono text-[16px] text-[#999] leading-relaxed tracking-wide">{card.description}</p>
-          </div>
-          <div className="absolute top-4 right-5 w-10 h-10 rounded-full border border-white/10 bg-[#0a0a0a]/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:border-[#F05D23] group-hover:bg-[#F05D23]/10 transition-all duration-500">
-            <ArrowUpRight className="w-4 h-4 text-[#F05D23]" />
-          </div>
-        </div>
-      ))}
-    </div>
+    <TooltipPrimitive.Provider delayDuration={280} skipDelayDuration={120}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0">
+        {CAROUSEL_PROJECTS.map((project, i) => (
+          <ShowcaseGalleryCard key={project.id} project={project} index={i} />
+        ))}
+      </div>
+    </TooltipPrimitive.Provider>
   </div>
 ));
 
@@ -1427,56 +1535,54 @@ const CertificationsSection = React.memo(() => (
     <div id="certifications" className="scroll-mt-20 md:scroll-mt-8" />
     <FluidTagTitle text="Certifications // 04" />
 
-    <div className="space-y-6">
-      {CERTIFICATIONS.map((cert, i) => (
-        <a
-          key={i}
-          href={cert.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex flex-col md:flex-row gap-0 bg-[#0a0a0a] border border-white/5 overflow-hidden hover:border-[#F05D23]/30 transition-all duration-500 cursor-pointer"
-        >
-          <div className="relative w-full md:w-[300px] h-[180px] shrink-0 overflow-hidden">
-            <div
-              className="cert-tile-bg absolute inset-0 bg-cover bg-center image-scale-base"
-              style={{ backgroundImage: `url(${cert.image})` }}
-            />
-            <div className="hover-demonic-overlay" />
-          </div>
-          <div className="flex flex-col justify-center p-6 md:py-6 md:px-8 flex-1">
-            <h4 className="font-mono text-[16px] tracking-wider text-white uppercase mb-2 group-hover:text-[#F05D23] transition-colors">
-              <ScrambleText text={cert.title} />
-            </h4>
-            <p className="font-mono text-[16px] text-[#999] leading-relaxed tracking-wide">
-              {cert.description}
-            </p>
-            <div className="mt-4 flex items-center justify-end gap-2 font-mono text-[11px] tracking-[0.25em] text-white/50 md:hidden">
-              VIEW
-              <ArrowUpRight className="w-3.5 h-3.5" />
+    <HellCard className="px-3 py-6 sm:px-8 sm:py-10 md:px-10 md:py-12">
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 md:gap-6">
+        {CERTIFICATIONS.map((cert, i) => (
+          <a
+            key={i}
+            href={cert.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative flex flex-col bg-[#0a0a0a]/70 border border-white/10 overflow-hidden hover:border-[#F05D23]/40 transition-all duration-500 cursor-pointer"
+          >
+            <div className="relative w-full h-[100px] sm:h-[180px] shrink-0 overflow-hidden">
+              <div
+                className="cert-tile-bg absolute inset-0 bg-cover bg-center image-scale-base"
+                style={{ backgroundImage: `url(${cert.image})` }}
+              />
+              <div className="hover-demonic-overlay" />
+              <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
+                <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full border border-white/15 bg-black/60 backdrop-blur-md flex items-center justify-center group-hover:border-[#F05D23] group-hover:bg-[#F05D23]/90 transition-all duration-500">
+                  <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 text-white/70 group-hover:text-black transition-colors" />
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="hidden md:flex items-center pr-8">
-            <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center group-hover:border-[#F05D23] group-hover:bg-[#F05D23] transition-all duration-500">
-              <ArrowUpRight className="w-4 h-4 text-white/50 group-hover:text-white transition-colors" />
+            <div className="flex flex-col p-3 sm:p-6">
+              <h4 className="font-mono text-[11px] sm:text-[15px] leading-tight tracking-wider text-white uppercase mb-1.5 sm:mb-2 group-hover:text-[#F05D23] transition-colors">
+                <ScrambleText text={cert.title} />
+              </h4>
+              <p className="font-mono text-[11px] sm:text-[14px] text-[#999] leading-relaxed tracking-wide line-clamp-3 sm:line-clamp-none">
+                {cert.description}
+              </p>
             </div>
-          </div>
-        </a>
-      ))}
-    </div>
+          </a>
+        ))}
+      </div>
+    </HellCard>
   </div>
 ));
 
 /* Hover-glitch + timeline pulse styles live in src/styles/hover-glitch.css. */
 
 /* ─── Section IDs for nav tracking ─── */
-const SECTION_IDS = ['home', 'projects', 'about', 'work', 'certifications'] as const;
+const SECTION_IDS = ['home', 'highlights', 'experience', 'showcase', 'certifications'] as const;
 type SectionId = typeof SECTION_IDS[number];
 
 const SECTION_LABELS: Record<SectionId, string> = {
   home: 'HOME',
-  projects: 'PROJECTS',
-  about: 'EXPERIENCE',
-  work: 'MY WORK',
+  highlights: 'HIGHLIGHTS',
+  experience: 'EXPERIENCE',
+  showcase: 'SHOWCASE',
   certifications: 'CERTIFICATIONS',
 };
 
@@ -1486,7 +1592,7 @@ const MobileSummonAIButton = React.memo(() => (
     type="button"
     onClick={() => console.log('Summoning AI...')}
     aria-label="AI Chat"
-    className="md:hidden group fixed z-[50] flex flex-col items-center justify-center w-[64px] h-[64px] rounded-sm border border-[#F05D23]/40 bg-[#050505]/90 backdrop-blur-md overflow-hidden active:bg-[#1a0505] active:border-[#F05D23] transition-colors duration-300 shadow-[0_0_24px_rgba(240,93,35,0.2),0_10px_28px_rgba(0,0,0,0.55)] cursor-pointer"
+    className="md:hidden group fixed z-[50] flex flex-col items-center justify-center w-[64px] h-[64px] border border-[#F05D23]/40 bg-[#050505]/90 backdrop-blur-md overflow-hidden active:bg-[#1a0505] active:border-[#F05D23] transition-colors duration-300 shadow-[0_0_24px_rgba(240,93,35,0.2),0_10px_28px_rgba(0,0,0,0.55)] cursor-pointer"
     style={{
       bottom: 'max(env(safe-area-inset-bottom), 1.25rem)',
       right: 'max(env(safe-area-inset-right), 1.25rem)',
@@ -1562,10 +1668,41 @@ const MobileNav = ({
     <>
       {/* Top bar (fixed) */}
       <div
-        className="md:hidden fixed top-0 left-0 right-0 z-[60] flex items-center justify-between bg-black/70 backdrop-blur-md border-b border-white/10 h-14 pl-5 pr-2"
+        className="md:hidden fixed top-0 left-0 right-0 z-[60] flex items-center justify-between bg-black/70 backdrop-blur-md border-b border-white/10 h-[68px] pl-4 pr-2"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Goat sigil — demonic horned head in site orange */}
+          <span
+            aria-hidden
+            className="relative flex items-center justify-center w-9 h-9 shrink-0 border border-[#F05D23]/40 bg-[#0a0302] shadow-[0_0_14px_rgba(240,93,35,0.25),inset_0_0_8px_rgba(240,93,35,0.12)]"
+          >
+            <span className="absolute top-0.5 left-0.5 w-1.5 h-1.5 border-t border-l border-[#F05D23]/70" />
+            <span className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 border-b border-r border-[#F05D23]/70" />
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 32 32"
+              fill="none"
+              stroke="#F05D23"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ filter: 'drop-shadow(0 0 3px rgba(240,93,35,0.5))' }}
+            >
+              {/* Horns */}
+              <path d="M8 9 C4 6 3 10 4 13 C5 15 7 15 9 13" />
+              <path d="M24 9 C28 6 29 10 28 13 C27 15 25 15 23 13" />
+              {/* Head */}
+              <path d="M9 12 C9 20 12 26 16 27 C20 26 23 20 23 12 L21 14 L19 11 L16 13 L13 11 L11 14 Z" />
+              {/* Eyes */}
+              <path d="M12.5 17 L13.8 18" />
+              <path d="M19.5 17 L18.2 18" />
+              {/* Goatee beard */}
+              <path d="M16 24 L15 28 M16 24 L17 28 M16 24 L16 29" />
+            </svg>
+          </span>
+
           <span className="font-mono text-[11px] tracking-[0.25em] text-white/40 uppercase shrink-0">//</span>
           <span
             className="relative font-mono text-[13px] tracking-[0.2em] text-[#F05D23] uppercase truncate"
@@ -1584,7 +1721,7 @@ const MobileNav = ({
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
-          className="relative flex items-center justify-center w-11 h-11 border border-white/10 bg-black/60 backdrop-blur-sm rounded-sm overflow-hidden active:bg-[#1a0505] transition-colors"
+          className="relative flex items-center justify-center w-11 h-11 border border-white/10 bg-black/60 backdrop-blur-sm overflow-hidden active:bg-[#1a0505] transition-colors"
         >
           <span className="absolute top-1 left-1 w-2 h-2 border-t border-l border-[#F05D23]/60" aria-hidden />
           <span className="absolute bottom-1 right-1 w-2 h-2 border-b border-r border-[#F05D23]/60" aria-hidden />
@@ -1630,7 +1767,7 @@ const MobileNav = ({
                   type="button"
                   onClick={() => setOpen(false)}
                   aria-label="Close menu"
-                  className="flex items-center justify-center w-10 h-10 rounded-sm border border-white/10 active:bg-[#1a0505]"
+                  className="flex items-center justify-center w-10 h-10 border border-white/10 active:bg-[#1a0505]"
                 >
                   <X className="w-4 h-4 text-white/70" />
                 </button>
@@ -1703,50 +1840,60 @@ export default function App() {
   const scrollContainerRef = useRef<HTMLElement>(null);
   const [activeSection, setActiveSection] = useState<SectionId>('home');
 
-  // IntersectionObserver to track which section is in view
+  // Scroll-position-based active section: pick the section marker whose top
+  // is closest to (but not past) an activation line near the top of the
+  // viewport. Marker elements are zero-height so IntersectionObserver cannot
+  // be used reliably for this; explicit position math stays correct even
+  // when a section is taller than the viewport (e.g. the experience
+  // timeline).
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    const sectionElements = SECTION_IDS.map(id => container.querySelector(`#${id}`)).filter(Boolean) as HTMLElement[];
+    let rafId = 0;
+    const update = () => {
+      rafId = 0;
+      const sections = SECTION_IDS
+        .map((id) => {
+          const el = container.querySelector<HTMLElement>(`#${id}`);
+          if (!el) return null;
+          return {
+            id,
+            top: el.getBoundingClientRect().top - container.getBoundingClientRect().top,
+          };
+        })
+        .filter((x): x is { id: SectionId; top: number } => x !== null)
+        .sort((a, b) => a.top - b.top);
 
-    // Map to track visibility ratios per section
-    const visibilityMap = new Map<string, number>();
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          visibilityMap.set(entry.target.id, entry.intersectionRatio);
-        });
-
-        // Determine most visible section
-        let bestId: SectionId = 'home';
-        let bestRatio = 0;
-
-        visibilityMap.forEach((ratio, id) => {
-          if (ratio > bestRatio) {
-            bestRatio = ratio;
-            bestId = id as SectionId;
-          }
-        });
-
-        // If nothing is very visible, check scroll position for home
-        if (bestRatio < 0.05 && container.scrollTop < 100) {
-          bestId = 'home';
-        }
-
-        setActiveSection(bestId);
-      },
-      {
-        root: container,
-        threshold: [0, 0.1, 0.2, 0.3, 0.5, 0.7, 1],
-        rootMargin: '-10% 0px -10% 0px',
+      // Activation line ~25% from top of the scroll viewport.
+      const line = container.clientHeight * 0.25;
+      let active: SectionId = sections[0]?.id ?? 'home';
+      for (const s of sections) {
+        if (s.top - line <= 0) active = s.id;
+        else break;
       }
-    );
 
-    sectionElements.forEach((el) => observer.observe(el));
+      // At the very bottom, pin to the last section.
+      const atBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 4;
+      if (atBottom && sections.length) active = sections[sections.length - 1].id;
 
-    return () => observer.disconnect();
+      setActiveSection(active);
+    };
+
+    const scheduleUpdate = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(update);
+    };
+
+    container.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+    update();
+
+    return () => {
+      container.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // Scroll-state + intentional-hover gates for the demonic hover glitch.
@@ -1890,7 +2037,18 @@ export default function App() {
       <MobileSummonAIButton />
 
       {/* ── Left Navigation Sidebar (desktop only) ── */}
-      <aside className="hidden md:flex w-[320px] shrink-0 h-full flex-col justify-between py-16 px-16 relative z-10">
+      <aside
+        className="hidden md:flex w-[320px] shrink-0 h-full flex-col justify-between py-16 px-16 relative z-10"
+        onWheelCapture={(e) => {
+          // Forward wheel scrolls from empty nav areas into the main scroll
+          // container so the site scrolls when the cursor is parked over
+          // the sidebar. Interactive children (buttons/links) still receive
+          // clicks normally; we only intercept wheel.
+          const container = scrollContainerRef.current;
+          if (!container) return;
+          container.scrollBy({ top: e.deltaY, left: 0, behavior: 'auto' });
+        }}
+      >
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.25, 0.1, 0.25, 1] }}>
           <NavLink href="#home" isActive={activeSection === 'home'} onClick={scrollToSection('home')}>HOME</NavLink>
         </motion.div>
@@ -1901,33 +2059,36 @@ export default function App() {
         </motion.div>
         
         <motion.div className="flex flex-col gap-4" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.9, delay: 0.25, ease: [0.25, 0.1, 0.25, 1] }}>
-          <NavLink href="#projects" isActive={activeSection === 'projects'} onClick={scrollToSection('projects')}>PROJECTS</NavLink>
-          <NavLink href="#about" isActive={activeSection === 'about'} onClick={scrollToSection('about')}>EXPERIENCE</NavLink>
-          <NavLink href="#work" isActive={activeSection === 'work'} onClick={scrollToSection('work')}>MY WORK</NavLink>
+          <NavLink href="#highlights" isActive={activeSection === 'highlights'} onClick={scrollToSection('highlights')}>HIGHLIGHTS</NavLink>
+          <NavLink href="#experience" isActive={activeSection === 'experience'} onClick={scrollToSection('experience')}>EXPERIENCE</NavLink>
+          <NavLink href="#showcase" isActive={activeSection === 'showcase'} onClick={scrollToSection('showcase')}>SHOWCASE</NavLink>
           <NavLink href="#certifications" isActive={activeSection === 'certifications'} onClick={scrollToSection('certifications')}>CERTIFICATIONS</NavLink>
         </motion.div>
 
         <motion.div className="flex flex-col gap-3" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.5, ease: [0.25, 0.1, 0.25, 1] }}>
-          <button 
-            className="group relative flex items-center justify-between gap-3 px-5 py-3 border border-[#b91c1c]/30 bg-black/60 backdrop-blur-sm hover:bg-[#1a0505] hover:border-[#F05D23]/60 transition-all duration-500 rounded-sm overflow-hidden cursor-pointer shadow-[0_0_15px_rgba(185,28,28,0.1)] hover:shadow-[0_0_20px_rgba(240,93,35,0.2)]"
+          <button
+            className="group relative flex items-center justify-between gap-3 px-5 py-3 border border-[#F05D23]/50 bg-black/60 backdrop-blur-sm hover:bg-[#1a0505] hover:border-[#F05D23] transition-all duration-500 overflow-hidden cursor-pointer shadow-[0_0_15px_rgba(240,93,35,0.15)] hover:shadow-[0_0_24px_rgba(240,93,35,0.3)]"
             onClick={() => console.log('Summoning AI...')}
           >
             {/* Demonic scanline effect */}
-            <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(185,28,28,0.1)_50%)] bg-[length:100%_4px] pointer-events-none opacity-20 group-hover:opacity-40" />
+            <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(240,93,35,0.1)_50%)] bg-[length:100%_4px] pointer-events-none opacity-25 group-hover:opacity-50" />
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#F05D23]/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-            
+
             <div className="flex items-center gap-3 relative z-10">
               {/* Hellfire Core / Eye */}
               <div className="relative w-3 h-3 flex items-center justify-center">
-                <span className="absolute inset-0 rounded-full border border-[#b91c1c] scale-[1.5] group-hover:scale-[2] opacity-50 transition-transform duration-700" />
+                <span className="absolute inset-0 rounded-full border border-[#F05D23]/70 scale-[1.5] group-hover:scale-[2] opacity-70 transition-transform duration-700" />
                 <span className="absolute inset-0 rounded-full border border-[#F05D23] opacity-0 group-hover:opacity-100 group-hover:animate-ping" />
                 <span className="w-1.5 h-1.5 rounded-full bg-[#F05D23] shadow-[0_0_8px_#F05D23] animate-pulse" />
               </div>
-              <span className="font-mono text-[13px] tracking-[0.15em] text-[#ccc] group-hover:text-white transition-colors uppercase">
+              <span
+                className="font-mono text-[13px] tracking-[0.15em] text-[#F05D23] group-hover:text-[#ff7a42] transition-colors uppercase"
+                style={{ textShadow: '0 0 10px rgba(240,93,35,0.35)', fontWeight: 700 }}
+              >
                 Summon AI
               </span>
             </div>
-            <span className="relative z-10 font-mono text-[10px] text-[#b91c1c] tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <span className="relative z-10 font-mono text-[10px] text-[#F05D23]/80 tracking-widest group-hover:text-[#F05D23] transition-colors duration-300">
               [CHAT]
             </span>
           </button>
@@ -1937,7 +2098,7 @@ export default function App() {
       {/* ── Main Content Area ── */}
       <section
         ref={scrollContainerRef}
-        className="relative z-10 flex h-full min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-clip pr-5 pt-14 [overflow-clip-margin:3rem] md:pr-12 md:pt-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="relative z-10 flex h-full min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-clip pr-5 pt-[68px] [overflow-clip-margin:3rem] md:pr-12 md:pt-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         <div className="mx-auto w-full min-w-0 max-w-7xl pb-14 md:pb-24 pl-5 md:pl-16">
           {/* ─ Hero Section ── */}
@@ -1947,28 +2108,35 @@ export default function App() {
             <div className="flex-1 flex flex-col justify-end pb-4">
 
               {/* ── Metrics Sentence ── */}
-              <motion.p
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="mb-8 mt-8 md:mt-[80px] text-white/80 font-mono tracking-wide max-w-full md:max-w-xl md:ml-auto text-left md:text-right text-[13px] md:text-[16px]"
-                style={{ lineHeight: 1.65, letterSpacing: '-0.01em' }}
+                className="mb-8 mt-6 md:mt-[80px] max-w-full md:max-w-xl md:ml-auto order-4 md:order-1"
               >
-                Shipped <GlitchStatNumber value="17+" staggerMs={0} /> products, driving <GlitchStatNumber value="200%" staggerMs={380} /> revenue growth across <GlitchStatNumber value="50+" staggerMs={760} /> clients worldwide — with <GlitchStatNumber value="12" staggerMs={1140} /> design awards, <GlitchStatNumber value="98%" staggerMs={1520} /> client satisfaction, and <GlitchStatNumber value="5M+" staggerMs={1900} /> users impacted.
-              </motion.p>
+                <HellCard className="px-5 py-5 md:px-7 md:py-6">
+                  <p
+                    className="text-white/85 font-mono tracking-wide text-left md:text-right text-[13px] md:text-[16px]"
+                    style={{ lineHeight: 1.65, letterSpacing: '-0.01em' }}
+                  >
+                    Shipped <span className="text-[#F05D23] tabular-nums" style={{ fontWeight: 700 }}>17+</span> products, driving <span className="text-[#F05D23] tabular-nums" style={{ fontWeight: 700 }}>200%</span> revenue growth across <span className="text-[#F05D23] tabular-nums" style={{ fontWeight: 700 }}>50+</span> clients worldwide — with <span className="text-[#F05D23] tabular-nums" style={{ fontWeight: 700 }}>12</span> design awards, <span className="text-[#F05D23] tabular-nums" style={{ fontWeight: 700 }}>98%</span> client satisfaction, and <span className="text-[#F05D23] tabular-nums" style={{ fontWeight: 700 }}>5M+</span> users impacted.
+                  </p>
+                </HellCard>
+              </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 1, delay: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-                className="md:-ml-16"
+                className="md:-ml-16 order-1 md:order-2 mt-4 md:mt-0"
               >
                 <p
-                  className="text-[#999999] mb-4 flex items-center gap-3 text-[13px] md:text-[16px]"
+                  className="text-[#999999] mb-4 flex items-center justify-center md:justify-start gap-3 text-[13px] md:text-[16px]"
                   style={{ fontFamily: '"Space Mono", monospace', letterSpacing: '0.15em' }}
                 >
                   <span className="w-6 md:w-8 h-[1px] bg-[#999999]" />
                   HELLO, I'M
+                  <span className="w-6 md:hidden h-[1px] bg-[#999999]" />
                 </p>
               </motion.div>
 
@@ -1976,7 +2144,7 @@ export default function App() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1.2, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className="mb-4 md:-ml-16 [font-size:clamp(2.5rem,13vw,5rem)] md:[font-size:clamp(3.75rem,9vw,9rem)]"
+                className="mb-4 md:-ml-16 [font-size:clamp(2.5rem,13vw,5rem)] md:[font-size:clamp(3.75rem,9vw,9rem)] order-2 md:order-3 text-center md:text-left"
               >
                 <h1
                   className="text-[#f2f2f2]"
@@ -1995,11 +2163,11 @@ export default function App() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1.2, delay: 0.95, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-[4px] md:-ml-16 [font-size:clamp(0.9rem,3.6vw,1.15rem)] md:[font-size:clamp(1rem,1.65vw,1.45rem)]"
+                className="mt-[4px] md:-ml-16 [font-size:clamp(0.9rem,3.6vw,1.15rem)] md:[font-size:clamp(1rem,1.65vw,1.45rem)] order-3 md:order-4 text-center md:text-left"
               >
                 <div className="relative inline-block pb-1 overflow-hidden">
                   <h2
-                    className="flex flex-wrap items-center text-[#cccccc]"
+                    className="flex flex-wrap items-center justify-center md:justify-start text-[#cccccc]"
                     style={{
                       fontFamily: '"Space Mono", monospace',
                       fontSize: 'inherit',
@@ -2016,8 +2184,8 @@ export default function App() {
               </motion.div>
 
               {/* Integrated Carousel positioned directly under the title area */}
-              <div id="projects" className="scroll-mt-20 md:scroll-mt-8" />
-              <SmoothCarousel />
+              <div id="highlights" className="scroll-mt-20 md:scroll-mt-8 order-5" />
+              <div className="order-5 w-full"><SmoothCarousel /></div>
             </div>
           </div>
 
@@ -2026,36 +2194,125 @@ export default function App() {
           <MyWorkSection />
           <CertificationsSection />
 
-          {/* ── Footer ── */}
-          <footer className="pt-14 pb-8 md:pt-24 md:pb-12 border-t border-white/10">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 mb-10 md:mb-16">
-              <div>
-                <h4 className="font-mono text-[16px] tracking-widest text-[#F05D23] uppercase mb-6">Get In Touch</h4>
+          {/* ── Pre-Footer CTA ── */}
+          <HellCard as="section" className="mt-14 md:mt-24">
+            <div className="px-6 md:px-16 py-16 md:py-24 flex flex-col items-start gap-6">
+              <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.3em] uppercase text-[#F05D23]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#F05D23] shadow-[0_0_8px_#F05D23] animate-pulse" />
+                Signal / 05
+                <span className="w-8 h-px bg-[#F05D23]/40" />
+                Open for collaboration
+              </div>
+
+              <h3
+                className="font-mono text-[32px] md:text-[56px] leading-[1.05] tracking-tight text-white uppercase"
+                style={{ letterSpacing: '-0.02em', fontWeight: 500 }}
+              >
+                Let&apos;s build something<br />
+                <span className="text-[#F05D23]" style={{ textShadow: '0 0 32px rgba(240,93,35,0.35)' }}>
+                  unreasonably good.
+                </span>
+              </h3>
+
+              <p className="font-mono text-[14px] md:text-[16px] text-[#b0b0b0] leading-relaxed tracking-wide max-w-2xl">
+                Design, AI-agentic workflows, or end-to-end product — if the problem is ambitious and the timeline is
+                impossible, we should probably talk.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3 mt-2">
                 <a
                   href="mailto:hello@abhiroop.design"
-                  className="font-mono text-[16px] text-[#ccc] hover:text-[#F05D23] transition-colors tracking-wide"
+                  className="group relative flex items-center gap-3 px-5 py-3 bg-[#F05D23] text-black font-mono text-[13px] tracking-[0.2em] uppercase font-bold hover:bg-[#ff7a42] transition-colors duration-300"
+                  style={{ fontWeight: 700 }}
                 >
-                  hello@abhiroop.design
+                  <span className="w-1.5 h-1.5 rounded-full bg-black/80 group-hover:bg-black" />
+                  Start a project
+                  <ArrowUpRight className="w-4 h-4" />
+                </a>
+                <a
+                  href="https://linkedin.com/in/abhiroopchaudhuri"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative flex items-center gap-3 px-5 py-3 border border-white/15 text-white/85 font-mono text-[13px] tracking-[0.2em] uppercase hover:border-[#F05D23] hover:text-[#F05D23] transition-colors duration-300"
+                >
+                  Book a call
+                  <ArrowUpRight className="w-4 h-4" />
                 </a>
               </div>
-              <div>
-                <h4 className="font-mono text-[16px] tracking-widest text-[#F05D23] uppercase mb-6">Connect</h4>
-                <div className="flex flex-col gap-3">
-                  <a href="https://behance.net/abhiroopchaudhuri" target="_blank" rel="noopener noreferrer" className="font-mono text-[16px] text-[#999] hover:text-[#F05D23] transition-colors tracking-wide">Behance</a>
-                  <a href="https://github.com/abhiroopchaudhuri" target="_blank" rel="noopener noreferrer" className="font-mono text-[16px] text-[#999] hover:text-[#F05D23] transition-colors tracking-wide">GitHub</a>
-                  <a href="https://linkedin.com/in/abhiroopchaudhuri" target="_blank" rel="noopener noreferrer" className="font-mono text-[16px] text-[#999] hover:text-[#F05D23] transition-colors tracking-wide">LinkedIn</a>
-                </div>
+            </div>
+          </HellCard>
+
+          {/* ── Footer ── */}
+          <footer className="relative mt-8 md:mt-12 pt-10 md:pt-14 pb-8 md:pb-12 border-t border-white/10">
+            {/* ASCII-esque marker */}
+            <div className="flex items-center gap-3 font-mono text-[10px] tracking-[0.3em] uppercase text-white/30 mb-8 md:mb-12">
+              <span>// END_OF_TRANSMISSION</span>
+              <span className="flex-1 h-px bg-gradient-to-r from-white/15 via-white/5 to-transparent" />
+              <span className="text-[#F05D23]/70">◆</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-10 mb-10 md:mb-16">
+              <div className="md:col-span-5">
+                <h4 className="font-mono text-[11px] tracking-[0.3em] text-[#F05D23] uppercase mb-4">Channel.01 — Direct</h4>
+                <a
+                  href="mailto:hello@abhiroop.design"
+                  className="group inline-flex items-baseline gap-2 font-mono text-[20px] md:text-[28px] text-white hover:text-[#F05D23] transition-colors tracking-tight"
+                >
+                  hello@abhiroop.design
+                  <ArrowUpRight className="w-4 h-4 translate-y-[-2px] opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                </a>
+                <p className="mt-4 font-mono text-[13px] text-[#777] leading-relaxed tracking-wide max-w-sm">
+                  Based in the abyss (IST). Replying within 24h — usually a lot faster.
+                </p>
               </div>
-              <div>
-                <h4 className="font-mono text-[16px] tracking-widest text-[#F05D23] uppercase mb-6">Manifesto</h4>
-                <p className="font-mono text-[16px] text-[#999] tracking-wide">I design and develop with my AI minions,</p>
-                <p className="font-mono text-[16px] text-[#999] tracking-wide mt-2">Built at the speed of thought.</p>
+
+              <div className="md:col-span-4">
+                <h4 className="font-mono text-[11px] tracking-[0.3em] text-[#F05D23] uppercase mb-4">Channel.02 — Network</h4>
+                <ul className="flex flex-col gap-2 font-mono text-[14px]">
+                  {[
+                    { label: 'Behance', href: 'https://behance.net/abhiroopchaudhuri' },
+                    { label: 'GitHub', href: 'https://github.com/abhiroopchaudhuri' },
+                    { label: 'LinkedIn', href: 'https://linkedin.com/in/abhiroopchaudhuri' },
+                    { label: 'Read.cv', href: 'https://read.cv/abhiroop' },
+                  ].map((l) => (
+                    <li key={l.label}>
+                      <a
+                        href={l.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group inline-flex items-center gap-2 text-[#aaa] hover:text-[#F05D23] transition-colors tracking-wide"
+                      >
+                        <span className="font-mono text-[10px] text-white/25 group-hover:text-[#F05D23] transition-colors">↳</span>
+                        {l.label}
+                        <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="md:col-span-3">
+                <h4 className="font-mono text-[11px] tracking-[0.3em] text-[#F05D23] uppercase mb-4">Channel.03 — Manifesto</h4>
+                <p className="font-mono text-[13px] text-[#aaa] leading-relaxed tracking-wide">
+                  I design and develop<br />
+                  <span className="text-white">with my AI minions</span>,<br />
+                  built at the speed<br />
+                  of thought.
+                </p>
               </div>
             </div>
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-8 border-t border-white/5">
-              <p className="text-[#666] font-mono text-[16px] tracking-widest">© 2026 ABHIROOP CHAUDHURI</p>
-              <p className="text-[#666] font-mono text-[16px] tracking-widest flex flex-wrap items-center justify-center md:justify-end gap-2 text-center md:text-right">
-                DESIGNED IN THE ABYSS <span className="text-[#F05D23]">&#9670;</span> CONJURED BY AI AGENTS
+
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 pt-6 border-t border-white/5">
+              <div className="flex items-center gap-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#F05D23] shadow-[0_0_8px_#F05D23] animate-pulse" aria-hidden />
+                <p className="text-[#666] font-mono text-[11px] tracking-[0.3em] uppercase">© 2026 Abhiroop Chaudhuri</p>
+              </div>
+              <p className="text-[#555] font-mono text-[11px] tracking-[0.3em] uppercase flex flex-wrap items-center gap-2">
+                <span>Designed in the abyss</span>
+                <span className="text-[#F05D23]">&#9670;</span>
+                <span>Conjured by AI agents</span>
+                <span className="text-[#F05D23]">&#9670;</span>
+                <span>v.2026.04</span>
               </p>
             </div>
           </footer>
