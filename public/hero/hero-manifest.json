@@ -1,0 +1,8 @@
+{
+  "width": 480,
+  "frameHeight": 270,
+  "frameCount": 60,
+  "atlasUrl": "/hero/hero.atlas.webp",
+  "atlasUrlAvif": "/hero/hero.atlas.avif",
+  "colourBaked": true
+}
