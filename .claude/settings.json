@@ -32,7 +32,12 @@
       "Bash(sips -g pixelWidth -g pixelHeight /Users/abhiroop.chaudhuri/Desktop/DEVELOPMENT/Portfolio-2/portfoliov2/public/frames/ezgif-frame-001.webp)",
       "Bash(command -v ffmpeg)",
       "Bash(command -v brew)",
-      "Bash(npm uninstall *)"
+      "Bash(npm uninstall *)",
+      "Bash(ffprobe -v error -show_entries stream=width,height,duration,r_frame_rate,avg_frame_rate,codec_name,nb_frames,bit_rate -of default=noprint_wrappers=1 /Users/abhiroop.chaudhuri/Desktop/DEVELOPMENT/Portfolio-2/portfoliov2/public/hero/hero.mp4)",
+      "Bash(awk 'NR<466 || NR>841' src/app/App.tsx)",
+      "Bash(npx -y -p typescript@5.5.4 tsc --noEmit -p tsconfig.json)",
+      "Bash(node --input-type=module -e \"import\\('./src/app/components/ScrollFramePlayer.tsx'\\).then\\(\\(\\)=>console.log\\('ok'\\)\\).catch\\(e=>{console.error\\('FAIL:',e.message\\);process.exit\\(1\\)}\\)\")",
+      "Bash(npx -y esbuild --bundle --platform=browser --format=esm --loader:.tsx=tsx --loader:.ts=ts --jsx=automatic --outfile=/tmp/bundle-check.js src/app/components/ScrollFramePlayer.tsx)"
     ]
   }
 }

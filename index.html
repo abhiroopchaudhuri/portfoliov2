@@ -6,9 +6,11 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>Rebuild Portfolio Page (Copy)</title>
 
-      <!-- Hero background is a scroll-seeked single MP4. Preload with high
-           priority so the first paint has a frame ready. -->
-      <link rel="preload" as="video" href="/hero/hero.mp4" type="video/mp4" fetchpriority="high" />
+      <!-- Hero background: poster is always loaded (paints first), then the
+           runtime picks the right animated asset per tier. Preloading the
+           poster keeps LCP fast on every device without wasting bandwidth
+           on an asset a given tier will never play. -->
+      <link rel="preload" as="image" href="/hero/hero.poster.jpg" fetchpriority="high" />
     </head>
 
     <body>
