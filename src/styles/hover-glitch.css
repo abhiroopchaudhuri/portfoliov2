@@ -58,20 +58,23 @@
    A card receives :hover during momentum-scroll as it slides under a
    stationary cursor; that was producing random orange flashes. The
    .is-hover-armed class is toggled from JS on real pointer movement, and
-   is suppressed entirely while the scroll container is actively scrolling. */
-.group.is-hover-armed:hover .hover-demonic-overlay {
-  animation: demon-scanline-flash 4s infinite steps(1);
-  will-change: opacity, background;
-}
+   is suppressed entirely while the scroll container is actively scrolling.
+   Also gated to pointer-capable devices so touchscreens don't fake-trigger. */
+@media (hover: hover) and (pointer: fine) {
+  .group.is-hover-armed:hover .hover-demonic-overlay {
+    animation: demon-scanline-flash 4s infinite steps(1);
+    will-change: opacity, background;
+  }
 
-.group.is-hover-armed:hover .image-scale-base {
-  animation: demon-glitch-anim 4s infinite steps(1);
-  will-change: transform, filter;
-}
+  .group.is-hover-armed:hover .image-scale-base {
+    animation: demon-glitch-anim 4s infinite steps(1);
+    will-change: transform, filter;
+  }
 
-[data-scrolling="1"] .group.is-hover-armed:hover .hover-demonic-overlay,
-[data-scrolling="1"] .group.is-hover-armed:hover .image-scale-base {
-  animation: none !important;
+  [data-scrolling="1"] .group.is-hover-armed:hover .hover-demonic-overlay,
+  [data-scrolling="1"] .group.is-hover-armed:hover .image-scale-base {
+    animation: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
