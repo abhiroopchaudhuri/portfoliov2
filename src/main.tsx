@@ -13,6 +13,9 @@ const MdsProjectPage = lazy(() =>
 const WcagProjectPage = lazy(() =>
   import('./app/pages/WcagProjectPage.tsx').then((m) => ({ default: m.WcagProjectPage })),
 );
+const ThrifterProjectPage = lazy(() =>
+  import('./app/pages/ThrifterProjectPage.tsx').then((m) => ({ default: m.ThrifterProjectPage })),
+);
 
 // Style-matched fallback so the transition isn't a white flash.
 const PageFallback = () => (
@@ -36,6 +39,14 @@ createRoot(document.getElementById('root')!).render(
         element={
           <Suspense fallback={<PageFallback />}>
             <WcagProjectPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/projects/thrifter"
+        element={
+          <Suspense fallback={<PageFallback />}>
+            <ThrifterProjectPage />
           </Suspense>
         }
       />
