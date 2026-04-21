@@ -208,11 +208,14 @@ async function stepAtlas(intermediate) {
 }
 
 function stepPoster(intermediate) {
-  const duration = probeDuration(intermediate);
-  const t = Math.max(0, duration * 0.5);
+  // Use the LAST frame — static-state fallbacks (ultra-low tier, pre-canvas
+  // paint, asset-fetch failure) all show the "settled" end-of-sequence frame
+  // so there's no visual jump for users who never trigger scroll.
+  // `-sseof -0.1` = seek 0.1s from the end; more reliable than forward-seeking
+  // to `duration - 1f` in files where keyframes sit just before the end.
   const out = resolve(OUT_DIR, 'hero.poster.jpg');
   run(FFMPEG, [
-    '-y', '-ss', t.toFixed(3), '-i', intermediate,
+    '-y', '-sseof', '-0.1', '-i', intermediate,
     '-vf', `scale=${POSTER_WIDTH}:-2`,
     '-frames:v', '1', '-q:v', '4',
     out,
