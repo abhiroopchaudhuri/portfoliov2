@@ -118,8 +118,10 @@
   pointer-events: none;
 }
 
-.exp-card:hover::before {
-  opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+  .exp-card:hover::before {
+    opacity: 1;
+  }
 }
 
 /* ─── Showcase bento tile ───
@@ -134,29 +136,31 @@
   will-change: transform;
 }
 
-.showcase-tile:hover .showcase-tile-thumb {
-  transform: scale(1.04);
-}
+@media (hover: hover) and (pointer: fine) {
+  .showcase-tile:hover .showcase-tile-thumb {
+    transform: scale(1.04);
+  }
 
-.showcase-tile:hover .showcase-tile-wash {
-  opacity: 1;
-}
+  .showcase-tile:hover .showcase-tile-wash {
+    opacity: 1;
+  }
 
-.showcase-tile:hover .showcase-tile-accent {
-  width: 100%;
-}
+  .showcase-tile:hover .showcase-tile-accent {
+    width: 100%;
+  }
 
-.showcase-tile:hover .showcase-tile-bracket {
-  border-color: #F05D23;
-}
+  .showcase-tile:hover .showcase-tile-bracket {
+    border-color: #F05D23;
+  }
 
-.showcase-tile:hover .showcase-tile-arrow {
-  border-color: #F05D23;
-  background-color: rgba(240, 93, 35, 0.9);
-}
+  .showcase-tile:hover .showcase-tile-arrow {
+    border-color: #F05D23;
+    background-color: rgba(240, 93, 35, 0.9);
+  }
 
-.showcase-tile:hover .showcase-tile-arrow svg {
-  color: #000;
+  .showcase-tile:hover .showcase-tile-arrow svg {
+    color: #000;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -552,6 +552,15 @@ const SmoothCarousel = React.memo(() => {
         }
         return e.type.startsWith('touch');
       },
+      // Mobile: one-at-a-time snap with centered active card.
+      breakpoints: {
+        '(max-width: 767px)': {
+          align: 'center',
+          skipSnaps: false,
+          dragFree: false,
+          containScroll: false,
+        },
+      },
     },
     [autoplayPlugin.current]
   );
@@ -1174,24 +1183,34 @@ const AboutSection = React.memo(() => (
         </motion.p>
 
       <div className="relative mt-6 border-t border-white/[0.06] pt-6 md:mt-8 md:pt-8">
-        <div className="flex gap-0 pl-3 md:pl-5">
+        <div className="flex gap-0 pl-0 md:pl-5">
           <div className="relative w-10 shrink-0 md:w-14" aria-hidden>
-            <motion.div
-              className="pointer-events-none absolute left-1/2 top-3 bottom-3 -translate-x-1/2 origin-top"
-              style={{
-                width: '2px',
-                background: 'linear-gradient(to bottom, rgba(240,93,35,0.9), rgba(240,93,35,0.45) 50%, rgba(255,255,255,0.08))',
-                boxShadow: '0 0 14px rgba(240,93,35,0.2), 0 0 40px rgba(240,93,35,0.06)',
-              }}
-              initial={{ scaleY: 0 }}
-              whileInView={{ scaleY: 1 }}
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
-            />
+            {/* Wrapper handles the -50% x-centering; the inner motion.div
+                only animates scaleY so Framer's inline transform doesn't
+                clobber the translateX that centers the line in-column. */}
+            <div
+              className="pointer-events-none absolute left-1/2 top-3 bottom-3 z-[1]"
+              style={{ width: '2px', transform: 'translateX(-50%)' }}
+            >
+              <motion.div
+                className="absolute inset-0 origin-top"
+                style={{
+                  background: 'linear-gradient(to bottom, rgba(240,93,35,0.95), rgba(240,93,35,0.55) 50%, rgba(255,255,255,0.1))',
+                  boxShadow: '0 0 14px rgba(240,93,35,0.25), 0 0 40px rgba(240,93,35,0.08)',
+                }}
+                initial={{ scaleY: 0 }}
+                whileInView={{ scaleY: 1 }}
+                viewport={{ once: true, margin: '-80px' }}
+                transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
+              />
+            </div>
             {/* Ambient glow haze behind trunk */}
             <div
-              className="pointer-events-none absolute left-1/2 top-3 bottom-3 w-6 -translate-x-1/2 rounded-full opacity-[0.12] blur-xl"
-              style={{ background: 'linear-gradient(to bottom, #F05D23, transparent 85%)' }}
+              className="pointer-events-none absolute left-1/2 top-3 bottom-3 w-6 rounded-full opacity-[0.12] blur-xl"
+              style={{
+                background: 'linear-gradient(to bottom, #F05D23, transparent 85%)',
+                transform: 'translateX(-50%)',
+              }}
             />
           </div>
           <ol className="relative m-0 min-w-0 flex-1 list-none space-y-8 md:space-y-10 p-0" aria-label="Work experience">
@@ -1240,7 +1259,7 @@ const AboutSection = React.memo(() => (
                     )}
                   </div>
                   {item.logoSrc && (
-                    <div className="shrink-0 sm:pt-0.5">
+                    <div className="hidden sm:block shrink-0 sm:pt-0.5">
                       <div className="relative size-[72px] overflow-hidden border border-[#F05D23]/30 bg-[rgb(10_10_10_/0.9)] shadow-[0_8px_32px_rgb(0_0_0_/0.4)]">
                         <img
                           src={item.logoSrc}
@@ -1516,8 +1535,8 @@ const CertificationsSection = React.memo(() => (
     <div id="certifications" className="scroll-mt-20 md:scroll-mt-8" />
     <FluidTagTitle text="Certifications // 04" />
 
-    <HellCard className="px-5 py-8 sm:px-8 sm:py-10 md:px-10 md:py-12">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
+    <HellCard className="px-3 py-6 sm:px-8 sm:py-10 md:px-10 md:py-12">
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 md:gap-6">
         {CERTIFICATIONS.map((cert, i) => (
           <a
             key={i}
@@ -1526,23 +1545,23 @@ const CertificationsSection = React.memo(() => (
             rel="noopener noreferrer"
             className="group relative flex flex-col bg-[#0a0a0a]/70 border border-white/10 overflow-hidden hover:border-[#F05D23]/40 transition-all duration-500 cursor-pointer"
           >
-            <div className="relative w-full h-[180px] shrink-0 overflow-hidden">
+            <div className="relative w-full h-[100px] sm:h-[180px] shrink-0 overflow-hidden">
               <div
                 className="cert-tile-bg absolute inset-0 bg-cover bg-center image-scale-base"
                 style={{ backgroundImage: `url(${cert.image})` }}
               />
               <div className="hover-demonic-overlay" />
-              <div className="absolute top-3 right-3 z-10">
-                <div className="w-9 h-9 rounded-full border border-white/15 bg-black/60 backdrop-blur-md flex items-center justify-center group-hover:border-[#F05D23] group-hover:bg-[#F05D23]/90 transition-all duration-500">
-                  <ArrowUpRight className="w-4 h-4 text-white/70 group-hover:text-black transition-colors" />
+              <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
+                <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full border border-white/15 bg-black/60 backdrop-blur-md flex items-center justify-center group-hover:border-[#F05D23] group-hover:bg-[#F05D23]/90 transition-all duration-500">
+                  <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 text-white/70 group-hover:text-black transition-colors" />
                 </div>
               </div>
             </div>
-            <div className="flex flex-col p-6">
-              <h4 className="font-mono text-[15px] tracking-wider text-white uppercase mb-2 group-hover:text-[#F05D23] transition-colors">
+            <div className="flex flex-col p-3 sm:p-6">
+              <h4 className="font-mono text-[11px] sm:text-[15px] leading-tight tracking-wider text-white uppercase mb-1.5 sm:mb-2 group-hover:text-[#F05D23] transition-colors">
                 <ScrambleText text={cert.title} />
               </h4>
-              <p className="font-mono text-[14px] text-[#999] leading-relaxed tracking-wide">
+              <p className="font-mono text-[11px] sm:text-[14px] text-[#999] leading-relaxed tracking-wide line-clamp-3 sm:line-clamp-none">
                 {cert.description}
               </p>
             </div>
@@ -1649,10 +1668,41 @@ const MobileNav = ({
     <>
       {/* Top bar (fixed) */}
       <div
-        className="md:hidden fixed top-0 left-0 right-0 z-[60] flex items-center justify-between bg-black/70 backdrop-blur-md border-b border-white/10 h-14 pl-5 pr-2"
+        className="md:hidden fixed top-0 left-0 right-0 z-[60] flex items-center justify-between bg-black/70 backdrop-blur-md border-b border-white/10 h-[68px] pl-4 pr-2"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Goat sigil — demonic horned head in site orange */}
+          <span
+            aria-hidden
+            className="relative flex items-center justify-center w-9 h-9 shrink-0 border border-[#F05D23]/40 bg-[#0a0302] shadow-[0_0_14px_rgba(240,93,35,0.25),inset_0_0_8px_rgba(240,93,35,0.12)]"
+          >
+            <span className="absolute top-0.5 left-0.5 w-1.5 h-1.5 border-t border-l border-[#F05D23]/70" />
+            <span className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 border-b border-r border-[#F05D23]/70" />
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 32 32"
+              fill="none"
+              stroke="#F05D23"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ filter: 'drop-shadow(0 0 3px rgba(240,93,35,0.5))' }}
+            >
+              {/* Horns */}
+              <path d="M8 9 C4 6 3 10 4 13 C5 15 7 15 9 13" />
+              <path d="M24 9 C28 6 29 10 28 13 C27 15 25 15 23 13" />
+              {/* Head */}
+              <path d="M9 12 C9 20 12 26 16 27 C20 26 23 20 23 12 L21 14 L19 11 L16 13 L13 11 L11 14 Z" />
+              {/* Eyes */}
+              <path d="M12.5 17 L13.8 18" />
+              <path d="M19.5 17 L18.2 18" />
+              {/* Goatee beard */}
+              <path d="M16 24 L15 28 M16 24 L17 28 M16 24 L16 29" />
+            </svg>
+          </span>
+
           <span className="font-mono text-[11px] tracking-[0.25em] text-white/40 uppercase shrink-0">//</span>
           <span
             className="relative font-mono text-[13px] tracking-[0.2em] text-[#F05D23] uppercase truncate"
@@ -2048,7 +2098,7 @@ export default function App() {
       {/* ── Main Content Area ── */}
       <section
         ref={scrollContainerRef}
-        className="relative z-10 flex h-full min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-clip pr-5 pt-14 [overflow-clip-margin:3rem] md:pr-12 md:pt-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="relative z-10 flex h-full min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-clip pr-5 pt-[68px] [overflow-clip-margin:3rem] md:pr-12 md:pt-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         <div className="mx-auto w-full min-w-0 max-w-7xl pb-14 md:pb-24 pl-5 md:pl-16">
           {/* ─ Hero Section ── */}
@@ -2062,7 +2112,7 @@ export default function App() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="mb-8 mt-8 md:mt-[80px] max-w-full md:max-w-xl md:ml-auto"
+                className="mb-8 mt-6 md:mt-[80px] max-w-full md:max-w-xl md:ml-auto order-4 md:order-1"
               >
                 <HellCard className="px-5 py-5 md:px-7 md:py-6">
                   <p
@@ -2078,14 +2128,15 @@ export default function App() {
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 1, delay: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-                className="md:-ml-16"
+                className="md:-ml-16 order-1 md:order-2 mt-4 md:mt-0"
               >
                 <p
-                  className="text-[#999999] mb-4 flex items-center gap-3 text-[13px] md:text-[16px]"
+                  className="text-[#999999] mb-4 flex items-center justify-center md:justify-start gap-3 text-[13px] md:text-[16px]"
                   style={{ fontFamily: '"Space Mono", monospace', letterSpacing: '0.15em' }}
                 >
                   <span className="w-6 md:w-8 h-[1px] bg-[#999999]" />
                   HELLO, I'M
+                  <span className="w-6 md:hidden h-[1px] bg-[#999999]" />
                 </p>
               </motion.div>
 
@@ -2093,7 +2144,7 @@ export default function App() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1.2, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className="mb-4 md:-ml-16 [font-size:clamp(2.5rem,13vw,5rem)] md:[font-size:clamp(3.75rem,9vw,9rem)]"
+                className="mb-4 md:-ml-16 [font-size:clamp(2.5rem,13vw,5rem)] md:[font-size:clamp(3.75rem,9vw,9rem)] order-2 md:order-3 text-center md:text-left"
               >
                 <h1
                   className="text-[#f2f2f2]"
@@ -2112,11 +2163,11 @@ export default function App() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1.2, delay: 0.95, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-[4px] md:-ml-16 [font-size:clamp(0.9rem,3.6vw,1.15rem)] md:[font-size:clamp(1rem,1.65vw,1.45rem)]"
+                className="mt-[4px] md:-ml-16 [font-size:clamp(0.9rem,3.6vw,1.15rem)] md:[font-size:clamp(1rem,1.65vw,1.45rem)] order-3 md:order-4 text-center md:text-left"
               >
                 <div className="relative inline-block pb-1 overflow-hidden">
                   <h2
-                    className="flex flex-wrap items-center text-[#cccccc]"
+                    className="flex flex-wrap items-center justify-center md:justify-start text-[#cccccc]"
                     style={{
                       fontFamily: '"Space Mono", monospace',
                       fontSize: 'inherit',
@@ -2133,8 +2184,8 @@ export default function App() {
               </motion.div>
 
               {/* Integrated Carousel positioned directly under the title area */}
-              <div id="highlights" className="scroll-mt-20 md:scroll-mt-8" />
-              <SmoothCarousel />
+              <div id="highlights" className="scroll-mt-20 md:scroll-mt-8 order-5" />
+              <div className="order-5 w-full"><SmoothCarousel /></div>
             </div>
           </div>
 

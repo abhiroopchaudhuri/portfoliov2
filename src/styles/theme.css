@@ -573,8 +573,10 @@
   transition: box-shadow 0.85s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.carousel-card-shell:hover {
-  box-shadow: 0 22px 56px -14px rgba(240, 93, 35, 0.3);
+@media (hover: hover) and (pointer: fine) {
+  .carousel-card-shell:hover {
+    box-shadow: 0 22px 56px -14px rgba(240, 93, 35, 0.3);
+  }
 }
 
 /* Masked ring: only the 1px stroke, sits under the inner card */
@@ -608,10 +610,12 @@
   will-change: opacity;
 }
 
-.carousel-card-shell:hover .carousel-card-shell-glow {
-  opacity: 1;
-  animation: carousel-border-breathe 4.5s cubic-bezier(0.42, 0, 0.58, 1) infinite;
-  animation-delay: 0.12s;
+@media (hover: hover) and (pointer: fine) {
+  .carousel-card-shell:hover .carousel-card-shell-glow {
+    opacity: 1;
+    animation: carousel-border-breathe 4.5s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+    animation-delay: 0.12s;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -637,9 +641,11 @@
     opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.carousel-card-shell:hover .carousel-project-card-thumb {
-  scale: 1.025;
-  opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+  .carousel-card-shell:hover .carousel-project-card-thumb {
+    scale: 1.025;
+    opacity: 1;
+  }
 }
 
 .about-panel-bg {
@@ -650,9 +656,11 @@
     opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.group:hover .about-panel-bg {
-  scale: 1.05;
-  opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+  .group:hover .about-panel-bg {
+    scale: 1.05;
+    opacity: 1;
+  }
 }
 
 .cert-tile-frame {
@@ -660,8 +668,10 @@
   transition: scale 0.75s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.group:hover .cert-tile-frame {
-  scale: 1.02;
+@media (hover: hover) and (pointer: fine) {
+  .group:hover .cert-tile-frame {
+    scale: 1.02;
+  }
 }
 
 .cert-tile-bg {
@@ -672,9 +682,11 @@
     opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.group:hover .cert-tile-bg {
-  scale: 1.1;
-  opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+  .group:hover .cert-tile-bg {
+    scale: 1.1;
+    opacity: 1;
+  }
 }
 
 /* Skip rendering for off-screen content until the browser needs it.
