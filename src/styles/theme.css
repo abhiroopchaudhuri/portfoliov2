@@ -568,7 +568,6 @@
   position: relative;
   isolation: isolate;
   padding: 1px;
-  border-radius: 0.125rem;
   background: rgb(240 93 35 / 0.38);
   box-shadow: 0 12px 40px -16px rgba(240, 93, 35, 0.22);
   transition: box-shadow 0.85s cubic-bezier(0.22, 1, 0.36, 1);
