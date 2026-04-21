@@ -1,8 +1,8 @@
 import React, { useEffect, useLayoutEffect, useState, useMemo, useRef, useCallback } from 'react';
-import { motion, useScroll, useTransform } from 'motion/react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
-import { ChevronLeft, ChevronRight, ExternalLink, Github, ArrowUpRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Github, ArrowUpRight, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { cn } from './lib/utils';
@@ -29,8 +29,9 @@ const CAROUSEL_PROJECTS = carouselProjectsJson.projects as CarouselProject[];
 
 /** Bleeds to the same width as the project carousel inside the padded `max-w-7xl` column. */
 const CAROUSEL_SECTION_BLEED = cn(
-  'relative z-10 min-w-0 box-border w-[calc(100%+4rem)] max-w-none',
-  '-ml-8 -mr-8 md:-ml-16 md:-mr-12 md:w-[calc(100%+7rem)]',
+  'relative z-10 min-w-0 box-border max-w-none',
+  'w-[calc(100%+2.5rem)] -ml-5 -mr-5',
+  'md:w-[calc(100%+7rem)] md:-ml-16 md:-mr-12',
 );
 
 /* ─── Static noise tile (SVG feTurbulence is very expensive on every paint) ─── */
@@ -1108,7 +1109,7 @@ const SmoothCarousel = React.memo(() => {
           <button
             type="button"
             onClick={scrollPrev}
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 text-white/90 transition-colors hover:border-[#F05D23]/50 hover:text-[#F05D23]"
+            className="flex h-11 w-11 md:h-9 md:w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 text-white/90 transition-colors hover:border-[#F05D23]/50 hover:text-[#F05D23]"
             aria-label="Previous project"
           >
             <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
@@ -1116,7 +1117,7 @@ const SmoothCarousel = React.memo(() => {
           <button
             type="button"
             onClick={scrollNext}
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 text-white/90 transition-colors hover:border-[#F05D23]/50 hover:text-[#F05D23]"
+            className="flex h-11 w-11 md:h-9 md:w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 text-white/90 transition-colors hover:border-[#F05D23]/50 hover:text-[#F05D23]"
             aria-label="Next project"
           >
             <ChevronRight className="h-5 w-5" strokeWidth={1.5} />
@@ -1510,8 +1511,8 @@ const AboutSection = React.memo(() => (
   // paint outside its column, and `content-visibility: auto` enforces
   // `contain: paint`, which would clip the bleed and hide the first
   // characters of every line of the intro paragraph.
-  <div className="w-full min-w-0 py-24 border-t border-white/10">
-    <div id="about" className="scroll-mt-8" />
+  <div className="w-full min-w-0 py-14 md:py-24 border-t border-white/10">
+    <div id="about" className="scroll-mt-20 md:scroll-mt-8" />
     <div className={CAROUSEL_SECTION_BLEED}>
       <FluidTagTitle text="Experience // 02" />
 
@@ -1732,8 +1733,8 @@ const WORK_CARDS = [
 ];
 
 const MyWorkSection = React.memo(() => (
-  <div className="cv-auto w-full py-24 border-t border-white/10">
-    <div id="work" className="scroll-mt-8" />
+  <div className="cv-auto w-full py-14 md:py-24 border-t border-white/10">
+    <div id="work" className="scroll-mt-20 md:scroll-mt-8" />
     <FluidTagTitle text="My Work // 03" />
 
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1798,8 +1799,8 @@ const CERTIFICATIONS = [
 ];
 
 const CertificationsSection = React.memo(() => (
-  <div className="cv-auto w-full py-24 border-t border-white/10">
-    <div id="certifications" className="scroll-mt-8" />
+  <div className="cv-auto w-full py-14 md:py-24 border-t border-white/10">
+    <div id="certifications" className="scroll-mt-20 md:scroll-mt-8" />
     <FluidTagTitle text="Certifications // 04" />
 
     <div className="space-y-6">
@@ -1825,6 +1826,10 @@ const CertificationsSection = React.memo(() => (
             <p className="font-mono text-[16px] text-[#999] leading-relaxed tracking-wide">
               {cert.description}
             </p>
+            <div className="mt-4 flex items-center justify-end gap-2 font-mono text-[11px] tracking-[0.25em] text-white/50 md:hidden">
+              VIEW
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </div>
           </div>
           <div className="hidden md:flex items-center pr-8">
             <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center group-hover:border-[#F05D23] group-hover:bg-[#F05D23] transition-all duration-500">
@@ -1842,6 +1847,222 @@ const CertificationsSection = React.memo(() => (
 /* ─── Section IDs for nav tracking ─── */
 const SECTION_IDS = ['home', 'projects', 'about', 'work', 'certifications'] as const;
 type SectionId = typeof SECTION_IDS[number];
+
+const SECTION_LABELS: Record<SectionId, string> = {
+  home: 'HOME',
+  projects: 'PROJECTS',
+  about: 'EXPERIENCE',
+  work: 'MY WORK',
+  certifications: 'CERTIFICATIONS',
+};
+
+/* ─── Mobile Floating "AI Chat" Button (<md only) ─── */
+const MobileSummonAIButton = React.memo(() => (
+  <button
+    type="button"
+    onClick={() => console.log('Summoning AI...')}
+    aria-label="AI Chat"
+    className="md:hidden group fixed z-[50] flex flex-col items-center justify-center w-[64px] h-[64px] rounded-sm border border-[#F05D23]/40 bg-[#050505]/90 backdrop-blur-md overflow-hidden active:bg-[#1a0505] active:border-[#F05D23] transition-colors duration-300 shadow-[0_0_24px_rgba(240,93,35,0.2),0_10px_28px_rgba(0,0,0,0.55)] cursor-pointer"
+    style={{
+      bottom: 'max(env(safe-area-inset-bottom), 1.25rem)',
+      right: 'max(env(safe-area-inset-right), 1.25rem)',
+    }}
+  >
+    {/* Scanline wash */}
+    <span
+      className="pointer-events-none absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(240,93,35,0.06)_50%)] bg-[length:100%_4px] opacity-60"
+      aria-hidden
+    />
+    {/* Corner brackets */}
+    <span className="pointer-events-none absolute top-1.5 left-1.5 w-1.5 h-1.5 border-t border-l border-[#F05D23]" aria-hidden />
+    <span className="pointer-events-none absolute bottom-1.5 right-1.5 w-1.5 h-1.5 border-b border-r border-[#F05D23]" aria-hidden />
+    {/* Live status dot (top-right) */}
+    <span className="pointer-events-none absolute top-2 right-2 w-1 h-1 bg-[#F05D23] shadow-[0_0_8px_#F05D23] animate-pulse" aria-hidden />
+
+    {/* Label */}
+    <span
+      className="relative font-mono text-[15px] leading-none text-white tracking-[0.08em] pointer-events-none"
+      style={{ fontWeight: 700 }}
+      aria-hidden
+    >
+      AI
+    </span>
+    {/* Divider */}
+    <span
+      className="relative mt-1 h-[1px] w-5 bg-gradient-to-r from-transparent via-[#F05D23] to-transparent pointer-events-none"
+      aria-hidden
+    />
+    <span
+      className="relative mt-1 font-mono text-[8px] leading-none tracking-[0.3em] text-[#F05D23] uppercase pointer-events-none"
+      aria-hidden
+    >
+      Chat
+    </span>
+  </button>
+));
+
+/* ─── Mobile Navigation (hamburger + drawer, <md only) ─── */
+const MobileNav = ({
+  activeSection,
+  onNavigate,
+}: {
+  activeSection: SectionId;
+  onNavigate: (id: SectionId) => (e: React.MouseEvent) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+
+  const handleNav = (id: SectionId) => (e: React.MouseEvent) => {
+    onNavigate(id)(e);
+    setOpen(false);
+  };
+
+  return (
+    <>
+      {/* Top bar (fixed) */}
+      <div
+        className="md:hidden fixed top-0 left-0 right-0 z-[60] flex items-center justify-between bg-black/70 backdrop-blur-md border-b border-white/10 h-14 pl-5 pr-2"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-mono text-[11px] tracking-[0.25em] text-white/40 uppercase shrink-0">//</span>
+          <span
+            className="relative font-mono text-[13px] tracking-[0.2em] text-[#F05D23] uppercase truncate"
+            style={{ fontWeight: 700 }}
+          >
+            {SECTION_LABELS[activeSection]}
+            <span
+              className="absolute left-0 right-0 bottom-[-4px] h-[2px] pointer-events-none border-b border-dotted border-white/40"
+              aria-hidden
+            />
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-expanded={open}
+          className="relative flex items-center justify-center w-11 h-11 border border-white/10 bg-black/60 backdrop-blur-sm rounded-sm overflow-hidden active:bg-[#1a0505] transition-colors"
+        >
+          <span className="absolute top-1 left-1 w-2 h-2 border-t border-l border-[#F05D23]/60" aria-hidden />
+          <span className="absolute bottom-1 right-1 w-2 h-2 border-b border-r border-[#F05D23]/60" aria-hidden />
+          {open ? <X className="w-5 h-5 text-[#F05D23]" /> : <Menu className="w-5 h-5 text-[#F05D23]" />}
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.div
+              key="backdrop"
+              className="md:hidden fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              onClick={() => setOpen(false)}
+            />
+            <motion.aside
+              key="drawer"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Site navigation"
+              className="md:hidden fixed top-0 right-0 bottom-0 z-[80] flex flex-col justify-between bg-[#050505] border-l border-white/10 shadow-[-8px_0_40px_rgba(0,0,0,0.6)] w-[min(320px,85vw)] px-8"
+              style={{
+                paddingTop: 'max(env(safe-area-inset-top), 2.5rem)',
+                paddingBottom: 'max(env(safe-area-inset-bottom), 2.5rem)',
+              }}
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+            >
+              <span className="absolute top-4 left-4 w-3 h-3 border-t border-l border-[#F05D23]/60" aria-hidden />
+              <span className="absolute top-4 right-4 w-3 h-3 border-t border-r border-[#F05D23]/60" aria-hidden />
+              <span className="absolute bottom-4 left-4 w-3 h-3 border-b border-l border-[#F05D23]/60" aria-hidden />
+              <span className="absolute bottom-4 right-4 w-3 h-3 border-b border-r border-[#F05D23]/60" aria-hidden />
+
+              <div className="flex items-center justify-between mb-8">
+                <span className="font-mono text-[11px] tracking-[0.25em] text-white/40 uppercase">NAVIGATE</span>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Close menu"
+                  className="flex items-center justify-center w-10 h-10 rounded-sm border border-white/10 active:bg-[#1a0505]"
+                >
+                  <X className="w-4 h-4 text-white/70" />
+                </button>
+              </div>
+
+              <nav className="flex flex-col gap-5 flex-1 justify-center">
+                {SECTION_IDS.map((id) => {
+                  const isActive = id === activeSection;
+                  return (
+                    <a
+                      key={id}
+                      href={`#${id}`}
+                      onClick={handleNav(id)}
+                      aria-current={isActive ? 'true' : undefined}
+                      className={cn(
+                        'relative group flex items-center gap-3 py-2 cursor-pointer transition-colors duration-300',
+                        isActive ? 'text-[#F05D23]' : 'text-[#cccccc] active:text-[#F05D23]',
+                      )}
+                      style={{
+                        fontFamily: '"Space Mono", monospace',
+                        fontSize: '15px',
+                        letterSpacing: '0.2em',
+                        fontWeight: 700,
+                      }}
+                    >
+                      <span
+                        className={cn(
+                          'font-mono text-[11px] tracking-widest w-5 shrink-0',
+                          isActive ? 'text-[#F05D23]' : 'text-white/30',
+                        )}
+                        aria-hidden
+                      >
+                        {isActive ? '◆' : '//'}
+                      </span>
+                      <span className="uppercase">{SECTION_LABELS[id]}</span>
+                      {isActive && (
+                        <span
+                          className="absolute left-8 right-0 bottom-0 h-[2px] pointer-events-none border-b border-dotted border-white/40"
+                          aria-hidden
+                        />
+                      )}
+                    </a>
+                  );
+                })}
+              </nav>
+
+              <div className="font-mono text-[10px] tracking-[0.3em] text-white/25 uppercase text-center">
+                v.2026 // abyss build
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
 
 /* ─── Main App ─── */
 export default function App() {
@@ -1996,12 +2217,12 @@ export default function App() {
   }, []);
 
   return (
-    <main className="h-screen w-full bg-[#030303] text-white overflow-hidden flex relative selection:bg-[#F05D23] selection:text-black">
+    <main className="h-screen w-full bg-[#030303] text-white overflow-hidden flex flex-col md:flex-row relative selection:bg-[#F05D23] selection:text-black">
       <NoiseOverlay />
       <BackgroundChaseScene />
 
-      {/* ── Animated Background Elements ── */}
-      <div className="absolute inset-0 pointer-events-none z-[2] overflow-hidden">
+      {/* ── Animated Background Elements (desktop only) ── */}
+      <div className="hidden md:block absolute inset-0 pointer-events-none z-[2] overflow-hidden">
         <RadarRings />
 
         {dataStreams.map((ds, i) => <DataStream key={`ds-${i}`} {...ds} />)}
@@ -2040,8 +2261,14 @@ export default function App() {
       {/* ── Subtle Vignette ── */}
       <div className="absolute inset-0 pointer-events-none z-[3]" style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%)' }} />
 
-      {/* ── Left Navigation Sidebar ── */}
-      <aside className="w-[320px] shrink-0 h-full flex flex-col justify-between py-16 px-16 relative z-10">
+      {/* ── Mobile Navigation (hamburger + drawer) ── */}
+      <MobileNav activeSection={activeSection} onNavigate={scrollToSection} />
+
+      {/* ── Mobile Floating Summon-AI FAB ── */}
+      <MobileSummonAIButton />
+
+      {/* ── Left Navigation Sidebar (desktop only) ── */}
+      <aside className="hidden md:flex w-[320px] shrink-0 h-full flex-col justify-between py-16 px-16 relative z-10">
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.25, 0.1, 0.25, 1] }}>
           <NavLink href="#home" isActive={activeSection === 'home'} onClick={scrollToSection('home')}>HOME</NavLink>
         </motion.div>
@@ -2088,11 +2315,11 @@ export default function App() {
       {/* ── Main Content Area ── */}
       <section
         ref={scrollContainerRef}
-        className="relative z-10 flex h-full min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-clip pr-8 [overflow-clip-margin:3rem] md:pr-12 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="relative z-10 flex h-full min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-clip pr-5 pt-14 [overflow-clip-margin:3rem] md:pr-12 md:pt-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
-        <div className="mx-auto w-full min-w-0 max-w-7xl pb-24 pl-8 md:pl-16">
+        <div className="mx-auto w-full min-w-0 max-w-7xl pb-14 md:pb-24 pl-5 md:pl-16">
           {/* ─ Hero Section ── */}
-          <div id="home" className="min-h-screen flex flex-col justify-end relative pb-8">
+          <div id="home" className="min-h-[85vh] md:min-h-screen flex flex-col justify-end relative pb-8 scroll-mt-20 md:scroll-mt-0">
 
             {/* ── Hero Content ── */}
             <div className="flex-1 flex flex-col justify-end pb-4">
@@ -2102,8 +2329,8 @@ export default function App() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="mb-8 mt-[80px] text-white/80 font-mono tracking-wide max-w-xl ml-auto text-right"
-                style={{ fontSize: '16px', lineHeight: 1.65, letterSpacing: '-0.01em' }}
+                className="mb-8 mt-8 md:mt-[80px] text-white/80 font-mono tracking-wide max-w-full md:max-w-xl md:ml-auto text-left md:text-right text-[13px] md:text-[16px]"
+                style={{ lineHeight: 1.65, letterSpacing: '-0.01em' }}
               >
                 Shipped <GlitchStatNumber value="17+" staggerMs={0} /> products, driving <GlitchStatNumber value="200%" staggerMs={380} /> revenue growth across <GlitchStatNumber value="50+" staggerMs={760} /> clients worldwide — with <GlitchStatNumber value="12" staggerMs={1140} /> design awards, <GlitchStatNumber value="98%" staggerMs={1520} /> client satisfaction, and <GlitchStatNumber value="5M+" staggerMs={1900} /> users impacted.
               </motion.p>
@@ -2112,13 +2339,13 @@ export default function App() {
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 1, delay: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-                className="-ml-8 md:-ml-16"
+                className="md:-ml-16"
               >
                 <p
-                  className="text-[#999999] mb-4 flex items-center gap-3"
-                  style={{ fontFamily: '"Space Mono", monospace', fontSize: '16px', letterSpacing: '0.15em' }}
+                  className="text-[#999999] mb-4 flex items-center gap-3 text-[13px] md:text-[16px]"
+                  style={{ fontFamily: '"Space Mono", monospace', letterSpacing: '0.15em' }}
                 >
-                  <span className="w-8 h-[1px] bg-[#999999]" />
+                  <span className="w-6 md:w-8 h-[1px] bg-[#999999]" />
                   HELLO, I'M
                 </p>
               </motion.div>
@@ -2127,12 +2354,12 @@ export default function App() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1.2, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className="mb-4 -ml-8 md:-ml-16"
+                className="mb-4 md:-ml-16 [font-size:clamp(2.5rem,13vw,5rem)] md:[font-size:clamp(3.75rem,9vw,9rem)]"
               >
                 <h1
                   className="text-[#f2f2f2]"
                   style={{
-                    fontSize: 'clamp(3.75rem, 9vw, 9rem)',
+                    fontSize: 'inherit',
                     lineHeight: 0.9,
                     letterSpacing: '-0.04em',
                     fontWeight: 500,
@@ -2146,14 +2373,14 @@ export default function App() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1.2, delay: 0.95, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-[4px] -ml-8 md:-ml-16"
+                className="mt-[4px] md:-ml-16 [font-size:clamp(0.9rem,3.6vw,1.15rem)] md:[font-size:clamp(1rem,1.65vw,1.45rem)]"
               >
                 <div className="relative inline-block pb-1 overflow-hidden">
                   <h2
                     className="flex flex-wrap items-center text-[#cccccc]"
                     style={{
                       fontFamily: '"Space Mono", monospace',
-                      fontSize: 'clamp(1rem, 1.65vw, 1.45rem)',
+                      fontSize: 'inherit',
                       lineHeight: 1.4,
                       letterSpacing: '-0.02em',
                       fontWeight: 400,
@@ -2167,7 +2394,7 @@ export default function App() {
               </motion.div>
 
               {/* Integrated Carousel positioned directly under the title area */}
-              <div id="projects" className="scroll-mt-8" />
+              <div id="projects" className="scroll-mt-20 md:scroll-mt-8" />
               <SmoothCarousel />
             </div>
           </div>
@@ -2178,8 +2405,8 @@ export default function App() {
           <CertificationsSection />
 
           {/* ── Footer ── */}
-          <footer className="pt-24 pb-12 border-t border-white/10">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+          <footer className="pt-14 pb-8 md:pt-24 md:pb-12 border-t border-white/10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 mb-10 md:mb-16">
               <div>
                 <h4 className="font-mono text-[16px] tracking-widest text-[#F05D23] uppercase mb-6">Get In Touch</h4>
                 <a
