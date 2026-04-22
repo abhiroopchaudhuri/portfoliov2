@@ -43,6 +43,13 @@
         "github": "https://github.com/abhiroopchaudhuri/holovista-metaverse-website",
         "live": "https://holovista.vercel.app/"
       }
+    },
+    {
+      "id": 5,
+      "title": "Thrifter - Thrift Like a Pro",
+      "details": "A dynamic e-commerce platform revolutionizing the way people shop for luxury thrifted fashion. A comprehensive UX/UI case study.",
+      "thumbnail": "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=1080",
+      "cardUrl": "/projects/thrifter"
     }
   ]
 }
