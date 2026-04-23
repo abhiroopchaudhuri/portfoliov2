@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import App from './app/App.tsx';
+import { PasswordGate } from './app/components/PasswordGate.tsx';
 import './styles/index.css';
 
 // Project detail pages are not visible on the home route, so defer their code
@@ -15,6 +16,11 @@ const WcagProjectPage = lazy(() =>
 );
 const ThrifterProjectPage = lazy(() =>
   import('./app/pages/ThrifterProjectPage.tsx').then((m) => ({ default: m.ThrifterProjectPage })),
+);
+const MonolithPhase1ProjectPage = lazy(() =>
+  import('./app/pages/MonolithPhase1ProjectPage.tsx').then((m) => ({
+    default: m.MonolithPhase1ProjectPage,
+  })),
 );
 
 // Style-matched fallback so the transition isn't a white flash.
@@ -48,6 +54,21 @@ createRoot(document.getElementById('root')!).render(
           <Suspense fallback={<PageFallback />}>
             <ThrifterProjectPage />
           </Suspense>
+        }
+      />
+      <Route
+        path="/projects/monolith-phase-1"
+        element={
+          <PasswordGate
+            id="monolith-phase-1"
+            password="god-mode"
+            title="Monolith Phase 1 is private."
+            subtitle="Enter the password to open this case study."
+          >
+            <Suspense fallback={<PageFallback />}>
+              <MonolithPhase1ProjectPage />
+            </Suspense>
+          </PasswordGate>
         }
       />
     </Routes>

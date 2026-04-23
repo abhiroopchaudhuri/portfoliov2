@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" role="img" aria-label="Monolith Phase 1 — A workflow that designs with you">
+  <rect width="1200" height="800" fill="#f5f4ed"/>
+
+  <!-- left: label + headline -->
+  <g font-family="'Inter', system-ui, sans-serif" fill="#87867f" font-size="20" font-weight="500" letter-spacing="4">
+    <text x="72" y="112">MONOLITH · PHASE 1</text>
+  </g>
+
+  <g font-family="'Playfair Display', Georgia, serif" font-weight="500" font-size="76" fill="#141413">
+    <text x="72" y="300">A workflow</text>
+    <text x="72" y="388">that designs</text>
+    <text x="72" y="476">
+      <tspan fill="#c96442">with</tspan>
+      <tspan dx="20">you.</tspan>
+    </text>
+  </g>
+
+  <g font-family="'Inter', system-ui, sans-serif" fill="#5e5d59" font-size="22" font-weight="400">
+    <text x="72" y="560">25 agents · 26 rules · 14 scripts · one running app.</text>
+  </g>
+
+  <g font-family="'Inter', system-ui, sans-serif" fill="#87867f" font-size="16" font-weight="400" letter-spacing="2">
+    <text x="72" y="720">CASE STUDY · PORTFOLIO · 2026</text>
+  </g>
+
+  <!-- right: organic 25-node cluster with G1/G2/G3 diamonds and self-heal arcs -->
+  <g transform="translate(720, 130)">
+    <!-- faint backdrop circle for anchoring -->
+    <circle cx="220" cy="260" r="250" fill="none" stroke="#e8e6dc" stroke-width="1"/>
+
+    <!-- meandering connector lines (hand-drawn feel via slight Bezier wiggles) -->
+    <g stroke="#b0aea5" stroke-width="1.2" fill="none" opacity="0.85">
+      <path d="M 60 80 Q 120 140 180 110"/>
+      <path d="M 180 110 Q 250 90 320 140"/>
+      <path d="M 320 140 Q 380 180 420 230"/>
+      <path d="M 60 80 Q 50 200 110 260"/>
+      <path d="M 110 260 Q 180 290 220 260"/>
+      <path d="M 220 260 Q 280 260 320 140"/>
+      <path d="M 110 260 Q 90 380 160 420"/>
+      <path d="M 160 420 Q 250 440 320 400"/>
+      <path d="M 320 400 Q 400 360 420 230"/>
+      <path d="M 220 260 Q 250 350 320 400"/>
+      <path d="M 180 110 Q 210 200 220 260"/>
+      <path d="M 60 80 Q 80 20 180 110"/>
+      <path d="M 160 420 Q 230 460 320 400"/>
+      <path d="M 220 260 Q 160 330 160 420"/>
+    </g>
+
+    <!-- subtle olive-green tinted connectors -->
+    <g stroke="#8b9576" stroke-width="1" fill="none" opacity="0.55">
+      <path d="M 60 80 Q 170 40 320 140"/>
+      <path d="M 110 260 Q 220 220 320 140"/>
+      <path d="M 220 260 Q 330 320 420 230"/>
+    </g>
+
+    <!-- 25 nodes (dots) -->
+    <g fill="#141413">
+      <!-- row 1 -->
+      <circle cx="60" cy="80" r="6"/>
+      <circle cx="180" cy="110" r="6"/>
+      <circle cx="320" cy="140" r="6"/>
+      <circle cx="420" cy="230" r="6"/>
+
+      <!-- row 2 -->
+      <circle cx="110" cy="180" r="5"/>
+      <circle cx="240" cy="175" r="5"/>
+      <circle cx="375" cy="200" r="5"/>
+
+      <!-- center -->
+      <circle cx="110" cy="260" r="6"/>
+      <circle cx="220" cy="260" r="6"/>
+      <circle cx="320" cy="260" r="5"/>
+
+      <!-- row 4 -->
+      <circle cx="80" cy="340" r="5"/>
+      <circle cx="180" cy="340" r="5"/>
+      <circle cx="280" cy="340" r="5"/>
+      <circle cx="380" cy="320" r="5"/>
+
+      <!-- row 5 -->
+      <circle cx="160" cy="420" r="6"/>
+      <circle cx="250" cy="430" r="5"/>
+      <circle cx="320" cy="400" r="6"/>
+
+      <!-- cluster extras -->
+      <circle cx="100" cy="130" r="4"/>
+      <circle cx="270" cy="110" r="4"/>
+      <circle cx="400" cy="290" r="4"/>
+      <circle cx="140" cy="220" r="4"/>
+      <circle cx="300" cy="210" r="4"/>
+      <circle cx="200" cy="380" r="4"/>
+      <circle cx="360" cy="430" r="4"/>
+      <circle cx="70" cy="280" r="4"/>
+    </g>
+
+    <!-- 3 terracotta gate diamonds threaded through -->
+    <g fill="#c96442">
+      <!-- G1 - upper left -->
+      <polygon points="145,150 173,178 145,206 117,178"/>
+      <text x="145" y="183" text-anchor="middle" fill="#faf9f5"
+            font-family="'Inter', sans-serif" font-weight="700" font-size="14">G1</text>
+
+      <!-- G2 - center -->
+      <polygon points="275,245 303,273 275,301 247,273"/>
+      <text x="275" y="278" text-anchor="middle" fill="#faf9f5"
+            font-family="'Inter', sans-serif" font-weight="700" font-size="14">G2</text>
+
+      <!-- G3 - lower right -->
+      <polygon points="395,350 423,378 395,406 367,378"/>
+      <text x="395" y="383" text-anchor="middle" fill="#faf9f5"
+            font-family="'Inter', sans-serif" font-weight="700" font-size="14">G3</text>
+    </g>
+  </g>
+</svg>

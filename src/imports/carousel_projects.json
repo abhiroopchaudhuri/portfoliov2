@@ -50,6 +50,13 @@
       "details": "A dynamic e-commerce platform revolutionizing the way people shop for luxury thrifted fashion. A comprehensive UX/UI case study.",
       "thumbnail": "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=1080",
       "cardUrl": "/projects/thrifter"
+    },
+    {
+      "id": 6,
+      "title": "Monolith Phase 1 — A workflow that designs with you",
+      "details": "A 25-agent Claude Code workflow that turns a PRD and any design system into a click-tested, market-grade React app — research, competitive synthesis, UX, design, code, and five self-healing QA loops in a single run.",
+      "thumbnail": "/thumbnails/monolith-phase-1-cover.svg",
+      "cardUrl": "/projects/monolith-phase-1"
     }
   ]
 }
